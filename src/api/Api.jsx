@@ -2,8 +2,8 @@
 import { useCallback } from "react";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-const API = "http://localhost:8766";
-
+//const API = "http://localhost:8766";
+const API = "https://forexpro-backend-7ik2.onrender.com";
 function useApi(token) {
   const req = useCallback(async (method, path, body) => {
     const res = await fetch(API + path, {
