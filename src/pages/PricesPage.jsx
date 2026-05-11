@@ -18,7 +18,7 @@ import { fp, fpc, f2 } from "../utils/utils.js";
 import { CandleChart1, PAIRS, TFS } from "../components/Charts.jsx";
 
 const WS =
-  "ws://localhost:8766/prices/live?pairs=EURUSD,GBPUSD,USDJPY,AUDUSD,USDCAD,XAUUSD,BTCUSD,GBPJPY";
+  "wss://forexpro-backend-7ik2.onrender.com/prices/live?pairs=EURUSD,GBPUSD,USDJPY,AUDUSD,USDCAD,XAUUSD,BTCUSD,GBPJPY";
 
 export default function PricesPage({ api }) {
   const [prices, setPrices] = useState([]);
@@ -66,7 +66,7 @@ export default function PricesPage({ api }) {
 
 useEffect(() => {
   const sock = new WebSocket(
-    "ws://localhost:8000/ws/prices"
+    "wss://forexpro-backend-7ik2.onrender.com/ws/prices"
   );
 
   sock.onmessage = (e) => {
