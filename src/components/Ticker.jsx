@@ -4,7 +4,7 @@ import { C } from "../constants.jsx";
 import { fp, f2, fpc, usd } from "../utils/utils.js";
 import { PAIRS } from "./Charts.jsx";
 
-const WS = "ws://forexpro-backend-7ik2.onrender.com/prices/live?pairs=" + PAIRS.join(",");
+const WS = "wss://forexpro-backend-7ik2.onrender.com/prices/live?pairs=" + PAIRS.join(",");
 export default function Ticker({ api }) {
   const [prices, setPrices] = useState([]);
   const ws = useRef(null);
