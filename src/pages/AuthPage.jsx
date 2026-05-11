@@ -9,7 +9,7 @@ export default function AuthPage({ onLogin }) {
   const [err,  setErr]  = useState("");
   const [busy, setBusy] = useState(false);
 
- const API = "http://localhost:8766";
+ const API = "https://forexpro-backend-7ik2.onrender.com";
 
   const submit = async () => {
     setBusy(true); setErr("");
