@@ -339,7 +339,19 @@ body{
                   marginTop: 2,
                 }}
               >
-                PROFESSIONAL PLATFORM
+                {// Show the current page name based on the URL path automatically after clicking on the navigation link
+                window.location.pathname === "/" ? "DASHBOARD" :
+                window.location.pathname === "/signals" ? "SIGNALS" :
+                window.location.pathname === "/copy" ? "COPY TRADING" :
+                window.location.pathname === "/providers" ? "PROVIDERS" :
+                window.location.pathname === "/education" ? "EDUCATION" :
+                window.location.pathname === "/journal" ? "JOURNAL" :
+                window.location.pathname === "/prices" ? "PRICES" :
+                window.location.pathname === "/billing" ? "BILLING" :
+                window.location.pathname === "/profile" ? "PROFILE" : ""
+              }
+                           
+            
               </div>
               </div>
              
@@ -351,17 +363,7 @@ body{
                   gap: 8,
                 }}
               >
-                <Btn
-                  col={C.muted}
-                  ghost
-                  onClick={logout}
-                  style={{
-                    fontSize: 11,
-                    padding: "5px 12px",
-                  }}
-                >
-                  Sign Out
-                </Btn>
+              
                  <NavLink to="/profile" style={{cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit"}}>
                   <div
                   style={{

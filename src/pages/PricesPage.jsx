@@ -86,7 +86,7 @@ export default function PricesPage({ api }) {
       style={{
         padding: mobile ? "12px 12px 80px 12px" : 20,
         display: "grid",
-        gridTemplateColumns: "320px 1fr",
+        gridTemplateColumns: mobile ? "1fr" : "320px 1fr",
         gap: 18,
         minHeight: "100vh",
         background: "#071018",
@@ -99,6 +99,7 @@ export default function PricesPage({ api }) {
           background: "#0b1723",
           border: "1px solid #1f2937",
           overflow: "hidden",
+          display: mobile ? "none" : "block",
         }}
       >
         <div
@@ -264,6 +265,7 @@ export default function PricesPage({ api }) {
           background: "#0b1723",
           border: "1px solid #1f2937",
           padding: 18,
+          width: "100%",
         }}
       >
         {/* Header */}

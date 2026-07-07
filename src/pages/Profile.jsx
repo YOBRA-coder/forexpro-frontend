@@ -4,7 +4,7 @@ import { C } from "../constants.jsx";
 import { Card, SectionTitle, Stat, Badge, Row, Grid, Btn, FG, Inp, Sel, Modal, OkBox, InfoBox, ErrBox, useMobile } from "../shared/Shared.jsx";
 import { ago, fp, f1 } from "../utils/utils.js";
 import { API } from "../api/Api.jsx";
-import { useMobile } from "../shared/Shared.jsx";
+
 
 export default function Profile({ api, user, setUser }) {
   const [form, setForm] = useState({ bio: user?.bio || "", broker: user?.broker || "", mt5_login: user?.mt5_login || "", mt5_server: user?.mt5_server || "" });
@@ -37,6 +37,16 @@ export default function Profile({ api, user, setUser }) {
     } finally {
       setBridgeBusy(false);
     }
+  };
+
+  const logout = () => {
+    setToken("");
+    setUser(null);
+
+    localStorage.removeItem("fpx_t");
+    localStorage.removeItem("fpx_u");
+
+    window.location.href = "/";
   };
 
   const copyToken = () => {
@@ -173,6 +183,14 @@ export default function Profile({ api, user, setUser }) {
             </InfoBox>
           </>
         )}
+      </Card>
+
+      <Card style={{ marginTop: 16 }}>
+        <SectionTitle>Sign Out</SectionTitle>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.7 }}>
+          Signing out will log you out of ForexPro on this device. You can sign back in at any time using your email and password.
+        </div>
+        <Btn col={C.red} onClick={logout}>Sign Out</Btn>
       </Card>
     </div>
   );
