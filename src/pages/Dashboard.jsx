@@ -100,10 +100,10 @@ export default function Dashboard({ api }) {
                             signals.map((s) => (
                                 <Row key={s.id}
                                     style={{
-                                        display: "flex",
-                                        flexWrap: "wrap", // Prevents vertical list stretching on narrow Android screens
-                                        gap: "8px",
-                                        alignItems: "center"
+                                    display: "flex",
+                                    flexDirection: "row", // Guarantees row alignment on mobile
+                                    justifyContent: "space-between",
+                                    alignItems: "center"
                                     }}>
                                     <strong
                                         style={{
