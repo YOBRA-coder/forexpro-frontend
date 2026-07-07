@@ -19,10 +19,17 @@ export default function Profile({ api, user, setUser }) {
   };
 
   const F = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
+  const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
+
 
   return (
-    <div style={{ padding: 20 }}>
-      <Grid cols="1fr 1fr" gap={16}>
+    <div style={{ 
+        padding: isMobile ? "12px 12px 90px 12px" : "20px", // Adds 90px safety clearance for Android navigation bar
+        maxWidth: "100%",
+        boxSizing: "border-box"
+      }}>
+      <Grid  cols={isMobile ? "1fr" : "1fr 1fr"} // Switches grid columns down to 1 stack on mobile screen widths
+        gap={16}>
         <Card>
           <SectionTitle>Account Info</SectionTitle>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
