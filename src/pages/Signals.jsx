@@ -242,7 +242,7 @@ export default function Signals({ api }) {
   };
 
   return (
-    <div style={{ padding: mobile ? "12px 12px 80px 12px" : 20, maxWidth: "100%", boxSizing: "border-box", }}>
+    <div style={{ padding: mobile ? "12px 12px 120px 12px" : 20, maxWidth: "100%", boxSizing: "border-box", }}>
       {/* Sub tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <Btn col={subTab === "gen" ? C.gold : C.muted} ghost={subTab !== "gen"} onClick={() => setSubTab("gen")} style={{ fontSize: 11, padding: "6px 14px" }}>⚡ Generate</Btn>

@@ -58,7 +58,7 @@ export default function Profile({ api, user, setUser }) {
   const F = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
 
   return (
-    <div style={{ padding: mobile ? "12px 12px 80px 12px" : 20, maxWidth: "100%", boxSizing: "border-box", }}>
+    <div style={{ padding: mobile ? "12px 12px 120px 12px" : 20, maxWidth: "100%", boxSizing: "border-box", }}>
       <Grid cols="1fr 1fr" gap={16}>
         <Card>
           <SectionTitle>Account Info</SectionTitle>
