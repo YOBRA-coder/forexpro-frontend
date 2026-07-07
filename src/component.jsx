@@ -331,7 +331,7 @@ body{
                   fontWeight: 700,
                 }}
               >
-                {mobile ? "ForexPro" : ""}
+                {mobile ? <span>Forex<span style={{ color: C.gold }}>Pro</span></span> : ""}
                 <div
                 style={{
                   fontSize: 9,

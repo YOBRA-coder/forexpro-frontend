@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { C } from "../constants.jsx";
 import { Card, SectionTitle, Grid, Btn, FG, Inp, ErrBox, OkBox, Badge, Modal, Pill } from "../shared/Shared.jsx";
-
+import { useMobile } from "../shared/Shared.jsx";
 function money(n, ccy) {
   if (!n) return ccy === "KES" ? "KES 0" : "$0";
   return ccy === "KES" ? `KES ${Number(n).toLocaleString()}` : `$${Number(n).toFixed(2)}`;
@@ -100,6 +100,7 @@ export default function Billing({ api, user, setUser }) {
   const [busy, setBusy]       = useState("");
   const [err, setErr]         = useState("");
   const [usage, setUsage]     = useState(null);
+  const mobile = useMobile();
 
   useEffect(() => {
     api.get("/payments/plans").then(setPlans).catch((e) => setErr(e.message));
@@ -135,7 +136,7 @@ export default function Billing({ api, user, setUser }) {
   const active = user?.subscription_active;
 
   return (
-    <div style={{ padding: 20, maxWidth: 980, margin: "0 auto" }}>
+ <div style={{ padding: mobile ? "12px 12px 80px 12px" : 20, maxWidth: "100%", boxSizing: "border-box", }}>
       {!registrationPaid && (
         <Card style={{
           background: `linear-gradient(135deg, ${C.gold}18, ${C.surf})`,

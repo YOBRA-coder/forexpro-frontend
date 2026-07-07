@@ -19,6 +19,7 @@ import { fp, fpc, f2 } from "../utils/utils.js";
 import { CandleChart1, PAIRS, TFS } from "../components/Charts.jsx";
 import { WS_BASE } from "../api/Api.jsx";
 import { useLiveSocket } from "../hooks/useLiveSocket.js";
+import { useMobile } from "../shared/Shared.jsx";
 
 const MARKET_LIST_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","XAUUSD","BTCUSD","GBPJPY"];
 const PRICES_WS_URL = `${WS_BASE}/ws/prices?pairs=${MARKET_LIST_PAIRS.join(",")}`;
@@ -34,6 +35,7 @@ export default function PricesPage({ api }) {
   const [liveCandle, setLiveCandle] = useState(null);
   const [busy, setBusy] = useState(false);
   const loadChartRef = useRef(null);
+  const mobile = useMobile();
 
   // ── Live market watchlist (left panel) ──
   const onPricesMsg = useCallback((d) => {
@@ -82,7 +84,7 @@ export default function PricesPage({ api }) {
   return (
     <div
       style={{
-        padding: 20,
+        padding: mobile ? "12px 12px 80px 12px" : 20,
         display: "grid",
         gridTemplateColumns: "320px 1fr",
         gap: 18,

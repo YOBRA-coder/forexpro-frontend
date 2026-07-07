@@ -9,6 +9,7 @@ import { PAIRS, TFS } from "../components/Charts.jsx";
 import { ChartWrap, Badge, ErrBox } from "../shared/Shared.jsx";
 import { WS_BASE } from "../api/Api.jsx";
 import { useLiveSocket } from "../hooks/useLiveSocket.js";
+import { useMobile } from "../shared/Shared.jsx";
 
 const SIGNALS_WS_URL = `${WS_BASE}/ws/signals`;
 
@@ -37,6 +38,7 @@ export default function Signals({ api }) {
   const [bridgeReady, setBridgeReady] = useState(false);
   const [usage, setUsage] = useState(null);
   const [genErr, setGenErr] = useState("");
+  const mobile = useMobile();
 
   const loadUsage = useCallback(() => {
     api.get("/account/usage").then(setUsage).catch(() => {});
@@ -240,7 +242,7 @@ export default function Signals({ api }) {
   };
 
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: mobile ? "12px 12px 80px 12px" : 20, maxWidth: "100%", boxSizing: "border-box", }}>
       {/* Sub tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <Btn col={subTab === "gen" ? C.gold : C.muted} ghost={subTab !== "gen"} onClick={() => setSubTab("gen")} style={{ fontSize: 11, padding: "6px 14px" }}>⚡ Generate</Btn>

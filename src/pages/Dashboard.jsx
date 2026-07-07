@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { C } from "../constants.jsx";
 import { Card, SectionTitle, Stat, Badge, Row, Grid } from "../shared/Shared.jsx";
 import { ago, fp, f2, fpc, usd } from "../utils/utils.js";
+import { useMobile } from "../shared/Shared.jsx";
 
 export default function Dashboard({ api }) {
     const [stats, setStats] = useState(null);
@@ -10,6 +11,7 @@ export default function Dashboard({ api }) {
     const [signals, setSignals] = useState([]);
     const [copies, setCopies] = useState([]);
     const [notifs, setNotifs] = useState([]);
+    const mobile = useMobile();
 
     useEffect(() => {
         api.get("/dashboard/stats").then(setStats).catch(() => { });
@@ -27,7 +29,7 @@ export default function Dashboard({ api }) {
     return (
         <div
             style={{
-                padding: window.innerWidth < 768 ? "12px 12px 80px 12px" : 20,
+                padding: mobile ? "12px 12px 80px 12px" : 20,
                 maxWidth: "100%",
                 boxSizing: "border-box",
             }}
