@@ -193,7 +193,6 @@ body{
 
             .mobile-link.active{
               color:${C.gold};
-              background:${C.gold}16;
               border-radius:4px;
             }
 
