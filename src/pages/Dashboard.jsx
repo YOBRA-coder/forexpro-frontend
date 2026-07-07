@@ -27,12 +27,12 @@ export default function Dashboard({ api }) {
     return (
         <div
             style={{
-                padding: window.innerWidth < 768 ? 12 : 20,
+                padding: window.innerWidth < 768 ? "12px 12px 80px 12px" : 20,
                 maxWidth: "100%",
                 boxSizing: "border-box",
             }}
         >
-            
+
             {/* Stats */}
             {stats && (
                 <Grid
@@ -98,9 +98,16 @@ export default function Dashboard({ api }) {
                             </div>
                         ) : (
                             signals.map((s) => (
-                                <Row key={s.id}>
+                                <Row key={s.id}
+                                    style={{
+                                        display: "flex",
+                                        flexWrap: "wrap", // Prevents vertical list stretching on narrow Android screens
+                                        gap: "8px",
+                                        alignItems: "center"
+                                    }}>
                                     <strong
                                         style={{
+                                            minWidth: "60px",
                                             flex: 1,
                                             fontSize: 12,
                                         }}
@@ -209,7 +216,10 @@ export default function Dashboard({ api }) {
                             <Row
                                 key={p.pair}
                                 style={{
+                                    display: "flex",
+                                    flexDirection: "row", // Guarantees row alignment on mobile
                                     justifyContent: "space-between",
+                                    alignItems: "center"
                                 }}
                             >
                                 <strong style={{ fontSize: 12 }}>
@@ -220,9 +230,9 @@ export default function Dashboard({ api }) {
                                     style={{
                                         fontFamily: "monospace",
                                         fontSize: 12,
-                                        color:p.direction === "up"
-                                                ? C.green
-                                                : C.red,
+                                        color: p.direction === "up"
+                                            ? C.green
+                                            : C.red,
                                     }}
                                 >
                                     {p.pair === "BTCUSD"
@@ -263,7 +273,13 @@ export default function Dashboard({ api }) {
                             </div>
                         ) : (
                             copies.map((t) => (
-                                <Row key={t.id}>
+                                <Row key={t.id}
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "row", // Guarantees row alignment on mobile
+                                        justifyContent: "space-between",
+                                        alignItems: "center"
+                                    }}>
                                     <strong
                                         style={{
                                             fontSize: 12,

@@ -14,6 +14,7 @@ import Profile from "./pages/Profile.jsx";
 import Billing from "./pages/Billing.jsx";
 import Ticker from "./components/Ticker.jsx";
 import { Btn } from "./shared/Shared.jsx";
+import { useMobile } from "./shared/Shared.jsx";
 
 export default function App() {
   const [token, setToken] = useState(
@@ -29,6 +30,7 @@ export default function App() {
   });
 
   const api = useApi(token);
+  const mobile = useMobile();
 
   const login = (tok, usr) => {
     setToken(tok);
@@ -192,6 +194,7 @@ body{
             .mobile-link.active{
               color:${C.gold};
               background:${C.gold}16;
+              border-radius:4px;
             }
 
             .content{
@@ -328,7 +331,17 @@ body{
                   fontWeight: 700,
                 }}
               >
-                ForexPro
+                {mobile ? "ForexPro" : ""}
+                <div
+                style={{
+                  fontSize: 9,
+                  color: C.muted,
+                  letterSpacing: 2,
+                  marginTop: 2,
+                }}
+              >
+                PROFESSIONAL PLATFORM
+              </div>
               </div>
              
 
