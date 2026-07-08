@@ -71,7 +71,7 @@ export default function Education({ api }) {
             <div style={{ background: C.surf2, border: `1px solid ${C.border}`, borderRadius: 9, padding: 18 }}>
               <div style={{ fontWeight: 600, marginBottom: 10 }}>📝 Quick Quiz</div>
               <div style={{ fontSize: 14, marginBottom: 12 }}>{lesson.quiz.q}</div>
-              {lesson.quiz.options.map((opt, i) => {
+              {lesson.quiz.options?.map((opt, i) => {
                 const state = !quiz?.answered ? "idle" : i === quiz.correct ? "correct" : i === quiz.chosen && i !== quiz.correct ? "wrong" : "idle";
                 const col   = state === "correct" ? C.green : state === "wrong" ? C.red : C.border;
                 const bg    = state === "correct" ? C.green + "18" : state === "wrong" ? C.red + "18" : C.surf;

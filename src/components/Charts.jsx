@@ -9,6 +9,7 @@ import {
   createChart,
   CandlestickSeries,
   LineSeries,
+  HistogramSeries,
 } from "lightweight-charts";
 
 function ConfRing({ val, size = 54 }) {
@@ -135,11 +136,14 @@ export default function CandleChart1({
   liveCandle = null,   // { time, open, high, low, close } — forming/closed bar from /ws/candles
   live = false,        // shows a small pulsing "LIVE" badge
   resetKey = "",        // change this (e.g. `${pair}_${timeframe}`) to force a full chart rebuild
+  pair = "EURUSD",      // used only to pick correct decimal precision (JPY/XAU/BTC differ from majors)
+  indicators = { ema: true, bb: true, sr: true, trendline: true, volume: true }, // toggle overlays on/off
 }) {
   const ref = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
   const lastBarTimeRef = useRef(null);
+  const decimals = pairDecimals(pair);
 
   // ── Full (re)build: runs on mount and whenever the pair/timeframe/bar-set changes ──
   useEffect(() => {
@@ -153,7 +157,31 @@ export default function CandleChart1({
       grid: { vertLines: { color: "rgba(255,255,255,0.05)" }, horzLines: { color: "rgba(255,255,255,0.05)" } },
       crosshair: { mode: 1 },
       rightPriceScale: { borderColor: "#1e293b" },
-      timeScale: { borderColor: "#1e293b", timeVisible: true, secondsVisible: false },
+      timeScale: {
+        borderColor: "#1e293b", timeVisible: true, secondsVisible: false,
+        // MT5-style axis labels: "08 Jul 14:00" for intraday, date-only when zoomed out to daily bars.
+        tickMarkFormatter: (time) => {
+          const d = new Date(time * 1000);
+          const dd = String(d.getUTCDate()).padStart(2, "0");
+          const mon = d.toLocaleString("en-GB", { month: "short", timeZone: "UTC" });
+          const hh = String(d.getUTCHours()).padStart(2, "0");
+          const mm = String(d.getUTCMinutes()).padStart(2, "0");
+          return `${dd} ${mon} ${hh}:${mm}`;
+        },
+      },
+      localization: {
+        // Crosshair/tooltip date — MT5 shows "YYYY.MM.DD HH:mm"
+        timeFormatter: (time) => {
+          const d = new Date(time * 1000);
+          const yyyy = d.getUTCFullYear();
+          const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+          const dd = String(d.getUTCDate()).padStart(2, "0");
+          const hh = String(d.getUTCHours()).padStart(2, "0");
+          const mi = String(d.getUTCMinutes()).padStart(2, "0");
+          return `${yyyy}.${mm}.${dd} ${hh}:${mi} UTC`;
+        },
+        priceFormatter: (p) => Number(p).toFixed(decimals),
+      },
     });
     chartRef.current = chart;
 
@@ -162,6 +190,9 @@ export default function CandleChart1({
       borderUpColor: "#22c55e", borderDownColor: "#ef4444",
       wickUpColor: "#22c55e", wickDownColor: "#ef4444",
       priceLineVisible: true,
+      // The library defaults every series to 2-decimal pricing regardless of
+      // instrument — this is why forex pairs were rendering at 2dp instead of 4dp.
+      priceFormat: { type: "price", precision: decimals, minMove: Math.pow(10, -decimals) },
     });
     candleSeriesRef.current = candleSeries;
 
@@ -172,22 +203,34 @@ export default function CandleChart1({
     lastBarTimeRef.current = candleData.length ? candleData[candleData.length - 1].time : null;
 
     // EMA20 / EMA50
-    if (bars.some((b) => b.ema20 != null)) {
+    if (indicators.ema && bars.some((b) => b.ema20 != null)) {
       const s = chart.addSeries(LineSeries, { color: "#facc15", lineWidth: 2, priceLineVisible: false, lastValueVisible: true, title: "EMA20" });
       s.setData(bars.filter((b) => b.ema20 != null).map((b) => ({ time: b.time, value: Number(b.ema20) })));
     }
-    if (bars.some((b) => b.ema50 != null)) {
+    if (indicators.ema && bars.some((b) => b.ema50 != null)) {
       const s = chart.addSeries(LineSeries, { color: "#a855f7", lineWidth: 2, priceLineVisible: false, lastValueVisible: true, title: "EMA50" });
       s.setData(bars.filter((b) => b.ema50 != null).map((b) => ({ time: b.time, value: Number(b.ema50) })));
     }
     // Bollinger bands
-    if (bars.some((b) => b.bb_upper ?? b.bb_up)) {
+    if (indicators.bb && bars.some((b) => b.bb_upper ?? b.bb_up)) {
       const s = chart.addSeries(LineSeries, { color: "#60a5fa", lineWidth: 1, lineStyle: 2, priceLineVisible: false });
       s.setData(bars.filter((b) => (b.bb_upper ?? b.bb_up) != null).map((b) => ({ time: b.time, value: Number(b.bb_upper ?? b.bb_up) })));
     }
-    if (bars.some((b) => b.bb_lower ?? b.bb_low)) {
+    if (indicators.bb && bars.some((b) => b.bb_lower ?? b.bb_low)) {
       const s = chart.addSeries(LineSeries, { color: "#3b82f6", lineWidth: 1, lineStyle: 2, priceLineVisible: false });
       s.setData(bars.filter((b) => (b.bb_lower ?? b.bb_low) != null).map((b) => ({ time: b.time, value: Number(b.bb_lower ?? b.bb_low) })));
+    }
+    // Volume histogram — pinned to the bottom ~15% of the pane via its own price scale
+    if (indicators.volume && bars.some((b) => b.volume != null)) {
+      const volSeries = chart.addSeries(HistogramSeries, {
+        priceFormat: { type: "volume" }, priceScaleId: "vol",
+        color: "#3d9eff55",
+      });
+      volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+      volSeries.setData(bars.map((b) => ({
+        time: b.time, value: Number(b.volume) || 0,
+        color: Number(b.close) >= Number(b.open) ? "#22c55e55" : "#ef444455",
+      })));
     }
 
     // ── Entry / Stop Loss / Take Profit — native price lines with labels ──
@@ -197,7 +240,7 @@ export default function CandleChart1({
     if (tp)    priceLines.push(candleSeries.createPriceLine({ price: Number(tp),    color: "#22c55e", lineWidth: 2, lineStyle: 2, axisLabelVisible: true, title: "TP" }));
 
     // ── Support / Resistance — dashed horizontal levels ──
-    (supportResistance || []).forEach((lvl) => {
+    if (indicators.sr) (supportResistance || []).forEach((lvl) => {
       const isRes = lvl.type === "resistance";
       priceLines.push(candleSeries.createPriceLine({
         price: Number(lvl.price),
@@ -209,7 +252,7 @@ export default function CandleChart1({
 
     // ── Trendline — a 2-point line series through recent swing highs/lows ──
     let trendSeries = null;
-    if (trendline?.p1 && trendline?.p2) {
+    if (indicators.trendline && trendline?.p1 && trendline?.p2) {
       const t1 = toUnixTime(trendline.p1.time), t2 = toUnixTime(trendline.p2.time);
       if (t1 != null && t2 != null) {
         trendSeries = chart.addSeries(LineSeries, {
@@ -249,7 +292,7 @@ export default function CandleChart1({
       chartRef.current = null;
       candleSeriesRef.current = null;
     };
-  }, [resetKey, bars.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetKey, bars.length, indicators.ema, indicators.bb, indicators.sr, indicators.trendline, indicators.volume]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Live tick / candle-close updates — no chart rebuild, just series.update() ──
   useEffect(() => {
@@ -334,6 +377,20 @@ function SigCard({ s, selected, onClick }) {
 }
 
 const PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","XAUUSD","BTCUSD"];
-const TFS   = ["M15","M30","H1","H4","D1","W1"];
+// Real currency pairs only — used anywhere the user is picking pairs to trade/copy
+// ("my pairs fix to allow only for forex"). XAUUSD/BTCUSD stay visible as market
+// info on the Prices ticker but are excluded from signal generation & copy filters.
+const FOREX_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY"];
+const TFS   = ["M1","M5","M15","M30","H1","H4","D1","W1"];
 
-export { ConfRing, CandleChart1, SigCard, PAIRS, TFS, };
+// Broker-style quote precision — JPY crosses & metals trade in fewer decimals,
+// everything else uses the standard 4-decimal (fractional-pip) forex convention.
+function pairDecimals(pair) {
+  if (!pair) return 4;
+  if (pair.includes("JPY")) return 3;
+  if (pair === "XAUUSD") return 2;
+  if (pair === "BTCUSD") return 2;
+  return 4;
+}
+
+export { ConfRing, CandleChart1, SigCard, PAIRS, FOREX_PAIRS, TFS, pairDecimals };

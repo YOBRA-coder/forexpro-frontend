@@ -15,15 +15,17 @@ const C = {
 
 // ─── Navigation config ────────────────────────────────────────────────────────
 const NAV = [
-  { id: "dashboard", icon: "⊞", label: "Dashboard"    },
-  { id: "signals",   icon: "⚡", label: "Signals"      },
-  { id: "copy",      icon: "↻", label: "Copy Trading" },
-  { id: "providers", icon: "★", label: "Providers"    },
-  { id: "education", icon: "🎓", label: "Education"    },
-  { id: "journal",   icon: "📖", label: "Journal"      },
-  { id: "prices",    icon: "📡", label: "Live Prices"  },
-  { id: "billing",   icon: "💳", label: "Billing"      },
-  { id: "profile",   icon: "⚙", label: "Profile / MT5"},
+  { id: "dashboard",     icon: "⊞", label: "Dashboard"    },
+  { id: "signals",       icon: "⚡", label: "Signals"      },
+  { id: "copy",          icon: "↻", label: "Copy Trading" },
+  { id: "providers",     icon: "★", label: "Providers"    },
+  { id: "education",     icon: "🎓", label: "Education"    },
+  { id: "journal",       icon: "📖", label: "Journal"      },
+  { id: "prices",        icon: "📡", label: "Live Prices"  },
+  { id: "billing",       icon: "💳", label: "Billing"      },
+  { id: "notifications", icon: "🔔", label: "Notifications"},
+  { id: "settings",      icon: "🛠", label: "Settings"     },
+  { id: "profile",       icon: "⚙", label: "Profile / MT5"},
 ];
 
 const bottomNav = [
@@ -31,7 +33,17 @@ const bottomNav = [
   { id: "signals",   icon: "⚡", label: "Signals"      },
   { id: "copy",      icon: "↻", label: "Copy Trading" },
   { id: "prices",    icon: "📡", label: "Live Prices"  },
-  { id: "profile",   icon: "⚙", label: "Profile / MT5"},
 ];
 
-export { C, NAV, bottomNav };
+// Everything that doesn't fit in the 5-slot bottom nav lives behind "More" on mobile.
+const moreNav = [
+  { id: "providers",     icon: "★", label: "Providers"    },
+  { id: "education",     icon: "🎓", label: "Education"    },
+  { id: "journal",       icon: "📖", label: "Journal"      },
+  { id: "billing",       icon: "💳", label: "Billing"      },
+  { id: "notifications", icon: "🔔", label: "Notifications"},
+  { id: "settings",      icon: "🛠", label: "Settings"     },
+  { id: "profile",       icon: "⚙", label: "Profile / MT5"},
+];
+
+export { C, NAV, bottomNav, moreNav };

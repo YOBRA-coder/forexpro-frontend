@@ -1,17 +1,17 @@
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { C } from "../constants.jsx";
 import { Card, SectionTitle, Stat, Badge, Row, Grid } from "../shared/Shared.jsx";
 import { ago, fp, f2, fpc, usd } from "../utils/utils.js";
-import { useMobile } from "../shared/Shared.jsx";
 
 export default function Dashboard({ api }) {
+    const navigate = useNavigate();
     const [stats, setStats] = useState(null);
     const [prices, setPrices] = useState([]);
     const [signals, setSignals] = useState([]);
     const [copies, setCopies] = useState([]);
     const [notifs, setNotifs] = useState([]);
-    const mobile = useMobile();
 
     useEffect(() => {
         api.get("/dashboard/stats").then(setStats).catch(() => { });
@@ -29,12 +29,12 @@ export default function Dashboard({ api }) {
     return (
         <div
             style={{
-                padding: mobile ? "12px 12px 80px 12px" : 20,
+                padding: window.innerWidth < 768 ? 12 : 20,
                 maxWidth: "100%",
                 boxSizing: "border-box",
             }}
         >
-
+            
             {/* Stats */}
             {stats && (
                 <Grid
@@ -100,16 +100,19 @@ export default function Dashboard({ api }) {
                             </div>
                         ) : (
                             signals.map((s) => (
-                                <Row key={s.id}
-                                    style={{
-                                    display: "flex",
-                                    flexDirection: "row", // Guarantees row alignment on mobile
-                                    justifyContent: "space-between",
-                                    alignItems: "center"
-                                    }}>
+                                <Row
+                                    key={s.id}
+                                    onClick={() => navigate(`/signals?id=${s.id}`)}
+                                    style={{ 
+                                         display: "flex",
+                                         flexDirection: "row", // Guarantees row alignment on mobile
+                                         justifyContent: "space-between",
+                                         alignItems: "center",
+                                        cursor: "pointer" 
+                                    }}
+                                >
                                     <strong
                                         style={{
-                                            minWidth: "60px",
                                             flex: 1,
                                             fontSize: 12,
                                         }}
@@ -169,8 +172,10 @@ export default function Dashboard({ api }) {
                             notifs.map((n) => (
                                 <Row
                                     key={n.id}
+                                    onClick={() => navigate("/notifications")}
                                     style={{
                                         opacity: n.is_read ? 0.5 : 1,
+                                        cursor: "pointer",
                                     }}
                                 >
                                     <div style={{ flex: 1 }}>
@@ -217,11 +222,13 @@ export default function Dashboard({ api }) {
                         {prices.map((p) => (
                             <Row
                                 key={p.pair}
+                                onClick={() => navigate(`/prices?pair=${p.pair}`)}
                                 style={{
                                     display: "flex",
                                     flexDirection: "row", // Guarantees row alignment on mobile
                                     justifyContent: "space-between",
-                                    alignItems: "center"
+                                    alignItems: "center",
+                                    cursor: "pointer",
                                 }}
                             >
                                 <strong style={{ fontSize: 12 }}>
@@ -232,9 +239,9 @@ export default function Dashboard({ api }) {
                                     style={{
                                         fontFamily: "monospace",
                                         fontSize: 12,
-                                        color: p.direction === "up"
-                                            ? C.green
-                                            : C.red,
+                                        color:p.direction === "up"
+                                                ? C.green
+                                                : C.red,
                                     }}
                                 >
                                     {p.pair === "BTCUSD"
@@ -275,13 +282,11 @@ export default function Dashboard({ api }) {
                             </div>
                         ) : (
                             copies.map((t) => (
-                                <Row key={t.id}
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "row", // Guarantees row alignment on mobile
-                                        justifyContent: "space-between",
-                                        alignItems: "center"
-                                    }}>
+                                <Row
+                                    key={t.id}
+                                    onClick={() => navigate(`/prices?pair=${t.pair}&copyTradeId=${t.id}`)}
+                                    style={{ cursor: "pointer" }}
+                                >
                                     <strong
                                         style={{
                                             fontSize: 12,

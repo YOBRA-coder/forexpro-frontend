@@ -4,19 +4,58 @@ import { NavLink } from "react-router-dom";
 import { C } from "../constants.jsx";
 import { Card, SectionTitle, Stat, Badge, Row, Grid, Btn, FG, Inp, Sel, Modal, OkBox, InfoBox, ErrBox } from "../shared/Shared.jsx";
 import { ago, fp, f1 } from "../utils/utils.js";
+import { PAIRS } from "../components/Charts.jsx";
+
+// Lets a follower pick exactly which pairs to auto-copy from a provider.
+// Empty = all pairs (mirrors the backend's `not pf` fallback in forexpro_main.py).
+function PairsFilterPicker({ value, onChange }) {
+  const toggle = (pair) => {
+    onChange(value.includes(pair) ? value.filter(p => p !== pair) : [...value, pair]);
+  };
+  return (
+    <FG label={`Pairs to copy (${value.length === 0 ? "all pairs" : value.length + " selected"})`}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {PAIRS.map(pair => {
+          const active = value.includes(pair);
+          return (
+            <button
+              key={pair}
+              type="button"
+              onClick={() => toggle(pair)}
+              style={{
+                padding: "5px 10px",
+                borderRadius: 6,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+                border: `1px solid ${active ? C.gold : C.border}`,
+                background: active ? `${C.gold}20` : "transparent",
+                color: active ? C.gold : C.muted,
+              }}
+            >
+              {pair}
+            </button>
+          );
+        })}
+      </div>
+    </FG>
+  );
+}
 
 export default function Providers({ api }) {
   const [list,    setList]    = useState([]);
   const [detail,  setDetail]  = useState(null);
   const [subForm, setSubForm] = useState(null);
   const [myIds,   setMyIds]   = useState([]);
-  const [sf,      setSf]      = useState({ risk_pct: 2, max_lot: 0.05, min_confidence: 65, auto_copy: true, auto_execute: false });
+  const [sf,      setSf]      = useState({ risk_pct: 2, max_lot: 0.05, min_confidence: 65, auto_copy: true, auto_execute: false, pairs_filter: [] });
   const [busy,    setBusy]    = useState(false);
   const [ok,      setOk]      = useState("");
   const [bridgeReady, setBridgeReady] = useState(false);
   const [usage, setUsage] = useState(null);
 
   const [myProvider, setMyProvider] = useState(undefined); // undefined = loading, null = not a provider
+  const [followers, setFollowers] = useState(null);
+  const [showFollowers, setShowFollowers] = useState(false);
   const [regForm, setRegForm]       = useState({ display_name: "", description: "", monthly_fee: 0 });
   const [regModal, setRegModal]     = useState(false);
   const [regBusy,  setRegBusy]      = useState(false);
@@ -25,6 +64,10 @@ export default function Providers({ api }) {
 
   const loadMyProvider = () => {
     api.get("/providers/me").then(setMyProvider).catch(() => setMyProvider(null));
+  };
+
+  const loadFollowers = () => {
+    api.get("/providers/me/followers").then(d => setFollowers(d.followers || [])).catch(() => setFollowers([]));
   };
 
   useEffect(() => {
@@ -65,7 +108,7 @@ export default function Providers({ api }) {
   const subscribe = async () => {
     setBusy(true); setSubErr("");
     try {
-      await api.post("/copy/subscribe", { provider_id: subForm.user_id, ...sf, pairs_filter: [] });
+      await api.post("/copy/subscribe", { provider_id: subForm.user_id, ...sf });
       setMyIds(p => [...p, subForm.user_id]);
       api.get("/account/usage").then(setUsage).catch(() => {});
       setSubForm(null);
@@ -124,9 +167,39 @@ export default function Providers({ api }) {
             <Stat label="Followers" value={myProvider.followers_count}  color={C.purple} />
             <Stat label="Signals"   value={myProvider.total_signals}    color={C.gold} />
           </Grid>
-          <div style={{ fontSize: 11, color: C.muted, marginTop: 10 }}>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 10, marginBottom: 12 }}>
             Generate signals from the Signals tab — they're automatically attributed to you and count toward these stats once they close.
           </div>
+
+          <Btn col={C.muted} ghost onClick={() => { setShowFollowers(s => !s); if (!followers) loadFollowers(); }} style={{ fontSize: 11, padding: "6px 12px" }}>
+            {showFollowers ? "Hide Followers ▲" : `View Followers (${myProvider.followers_count}) ▼`}
+          </Btn>
+
+          {showFollowers && (
+            followers === null ? (
+              <div style={{ fontSize: 12, color: C.muted, padding: "10px 0" }}>Loading…</div>
+            ) : followers.length === 0 ? (
+              <div style={{ fontSize: 12, color: C.muted, padding: "10px 0" }}>No followers yet — share your provider profile to start growing your audience.</div>
+            ) : (
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                {followers.map(f => (
+                  <div key={f.follower_id} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10,
+                                                      border: `1px solid ${C.border}`, borderRadius: 8, padding: 10, fontSize: 12 }}>
+                    <strong>{f.username}</strong>
+                    <Badge col={C.muted}>{f.plan}</Badge>
+                    <Badge col={f.auto_copy ? C.green : C.gold}>{f.auto_copy ? "Auto" : "Manual"}</Badge>
+                    <span style={{ color: C.muted, fontSize: 11 }}>Min conf {f.min_confidence}% · Risk {f.risk_pct}% · Max lot {f.max_lot}</span>
+                    <div style={{ marginLeft: "auto", display: "flex", gap: 14, fontSize: 11 }}>
+                      <span style={{ color: C.muted }}>{f.trades_copied} trades</span>
+                      <span style={{ color: f.pnl_from_your_signals >= 0 ? C.green : C.red, fontWeight: 700 }}>
+                        {f.pnl_from_your_signals >= 0 ? "+" : ""}${f.pnl_from_your_signals} from your signals
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
         </Card>
       )}
 
@@ -182,7 +255,7 @@ export default function Providers({ api }) {
                     ? <NavLink to="/billing" style={{ textDecoration: "none" }} onClick={e => e.stopPropagation()}>
                         <Btn col={C.gold} full>Follow limit reached — Upgrade</Btn>
                       </NavLink>
-                    : <Btn col={C.gold} full onClick={e => { e.stopPropagation(); setSubErr(""); setSubForm(p); }}>{p.monthly_fee > 0 ? `Subscribe $${p.monthly_fee}/mo` : "Subscribe Free"}</Btn>}
+                    : <Btn col={C.gold} full onClick={e => { e.stopPropagation(); setSubErr(""); setSf({ risk_pct: 2, max_lot: 0.05, min_confidence: 65, auto_copy: true, auto_execute: false, pairs_filter: [] }); setSubForm(p); }}>{p.monthly_fee > 0 ? `Subscribe $${p.monthly_fee}/mo` : "Subscribe Free"}</Btn>}
               </div>
             );
           })}
@@ -223,6 +296,7 @@ export default function Providers({ api }) {
           <FG label="Max lot size"><Inp type="number" min=".01" max="1" step=".01" value={sf.max_lot} onChange={e => setSf(p => ({ ...p, max_lot: +e.target.value }))} /></FG>
           <FG label="Min confidence (%)"><Inp type="number" min="50" max="95" value={sf.min_confidence} onChange={e => setSf(p => ({ ...p, min_confidence: +e.target.value }))} /></FG>
           <FG label="Auto copy"><Sel value={sf.auto_copy ? "1" : "0"} onChange={e => setSf(p => ({ ...p, auto_copy: e.target.value === "1" }))} options={[{ v: "1", l: "Yes — Automatic (recommended)" }, { v: "0", l: "No — Manual approve" }]} /></FG>
+          <PairsFilterPicker value={sf.pairs_filter} onChange={pf => setSf(p => ({ ...p, pairs_filter: pf }))} />
           {bridgeReady ? (
             <FG label="Execution">
               <Sel value={sf.auto_execute ? "1" : "0"} onChange={e => setSf(p => ({ ...p, auto_execute: e.target.value === "1" }))}

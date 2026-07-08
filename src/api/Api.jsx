@@ -5,11 +5,11 @@ import { useCallback } from "react";
 // Single source of truth for the backend origin. Swap this one line for
 // production (e.g. your Railway/Render URL) and every REST + WebSocket
 // call in the app follows automatically.
-//const API = "http://localhost:8766";
-const API = "https://forexpro-backend-7ik2.onrender.com";
+const API = "http://localhost:8766";
+// const API = "https://forexpro-backend-7ik2.onrender.com";
 
 // wss:// when the API is https://, ws:// when it's http:// — always in sync with API.
-const WS_BASE = API.replace(/^https/, "wss");
+const WS_BASE = API.replace(/^http/, "ws");
 
 function useApi(token) {
   const req = useCallback(async (method, path, body) => {

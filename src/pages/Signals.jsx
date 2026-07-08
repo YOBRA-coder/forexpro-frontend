@@ -1,26 +1,27 @@
 // ─── Signals ──────────────────────────────────────────────────────────────────
 import { useState, useEffect, useCallback } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useSearchParams } from "react-router-dom";
 import { C } from "../constants.jsx";
-import { Card, SectionTitle, Grid, Btn, Sel, FG, Pill } from "../shared/Shared.jsx";
+import { Card, SectionTitle, Grid, Btn, Sel, FG, Pill, Stat } from "../shared/Shared.jsx";
 import { fp, f1 } from "../utils/utils.js";
 import { CandleChart1, ConfRing, SigCard } from "../components/Charts.jsx";
-import { PAIRS, TFS } from "../components/Charts.jsx";
+import { PAIRS, FOREX_PAIRS, TFS } from "../components/Charts.jsx";
 import { ChartWrap, Badge, ErrBox } from "../shared/Shared.jsx";
 import { WS_BASE } from "../api/Api.jsx";
 import { useLiveSocket } from "../hooks/useLiveSocket.js";
-import { useMobile } from "../shared/Shared.jsx";
 
 const SIGNALS_WS_URL = `${WS_BASE}/ws/signals`;
 
 export default function Signals({ api }) {
+  const [searchParams] = useSearchParams();
+  const [lastCopied, setLastCopied] = useState(null); // { pair, direction } — shown as a "view in Copy Trading" banner
   const [pair,    setPair]    = useState("EURUSD");
   const [tf,      setTf]      = useState("H1");
   const [sigs,    setSigs]    = useState([]);
   const [sel,     setSel]     = useState(null);
   const [bars,    setBars]    = useState([]);
   const [busy,    setBusy]    = useState(false);
-  const [bulkP,   setBulkP]   = useState(["EURUSD","GBPUSD","USDJPY","XAUUSD"]);
+  const [bulkP,   setBulkP]   = useState(["EURUSD","GBPUSD","USDJPY","GBPJPY"]);
   const [bulkTf,  setBulkTf]  = useState(["H1","H4"]);
   const [minConf, setMinConf] = useState(0);
   const [dirF,    setDirF]    = useState("ALL");
@@ -38,7 +39,6 @@ export default function Signals({ api }) {
   const [bridgeReady, setBridgeReady] = useState(false);
   const [usage, setUsage] = useState(null);
   const [genErr, setGenErr] = useState("");
-  const mobile = useMobile();
 
   const loadUsage = useCallback(() => {
     api.get("/account/usage").then(setUsage).catch(() => {});
@@ -49,11 +49,12 @@ export default function Signals({ api }) {
     loadUsage();
   }, [api, loadUsage]);
 
-  const copySignal = async (sigId) => {
-    setCopyBusy(sigId); setCopyErr("");
+  const copySignal = async (sigId, sigObj) => {
+    setCopyBusy(sigId); setCopyErr(""); setLastCopied(null);
     try {
-      await api.post(`/signals/${sigId}/copy`, { lot_size: 0.02, risk_pct: 2, execute_live: executeLive && bridgeReady });
+      const res = await api.post(`/signals/${sigId}/copy`, { lot_size: 0.02, risk_pct: 2, execute_live: executeLive && bridgeReady });
       setCopiedIds((prev) => new Set(prev).add(sigId));
+      setLastCopied({ pair: res.pair || sigObj?.pair, direction: res.direction || sigObj?.direction, mode: res.execution_mode });
       loadUsage();
     } catch (e) {
       setCopyErr(e.message || "Could not copy this signal");
@@ -88,9 +89,17 @@ export default function Signals({ api }) {
       .then(d => setBars(d.candles || [])).catch(() => {});
   }, [sel, api]);
 
-  // Load latest on mount
+  // Load latest on mount; if Dashboard linked here with ?id=123, open that exact signal.
   useEffect(() => {
-    api.get("/signals/latest?limit=20").then(d => setSigs(d.signals || [])).catch(() => {});
+    api.get("/signals/latest?limit=20").then(d => {
+      setSigs(d.signals || []);
+      const wantId = searchParams.get("id");
+      if (wantId) {
+        const found = (d.signals || []).find(s => String(s.id) === wantId);
+        if (found) { setSel(found); return; }
+        api.get(`/signals/${wantId}`).then(s => setSel(s)).catch(() => {});
+      }
+    }).catch(() => {});
   }, []);
 
   const generate = async () => {
@@ -161,7 +170,7 @@ export default function Signals({ api }) {
                     Execute live (MT5)
                   </label>
                 )}
-                <Btn col={C.gold} onClick={() => copySignal(s.id)} disabled={copyBusy === s.id}>
+                <Btn col={C.gold} onClick={() => copySignal(s.id, s)} disabled={copyBusy === s.id}>
                   {copyBusy === s.id ? "Copying…" : executeLive && bridgeReady ? "↻ Copy — Live" : "↻ Copy This Signal"}
                 </Btn>
               </div>
@@ -169,6 +178,16 @@ export default function Signals({ api }) {
             <ConfRing val={s.confidence} size={60} />
           </div>
         </div>
+        {lastCopied && lastCopied.pair === s.pair && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+                        background: `${C.green}18`, border: `1px solid ${C.green}40`, borderRadius: 8,
+                        padding: "9px 12px", marginBottom: 10, fontSize: 12 }}>
+            <span>✓ Placed as a copy trade{lastCopied.mode === "mt5" ? " (sent to your MT5 bridge)" : " (simulated)"} — {lastCopied.pair} {lastCopied.direction}</span>
+            <NavLink to="/copy" style={{ color: C.gold, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap", marginLeft: 10 }}>
+              View in Copy Trading →
+            </NavLink>
+          </div>
+        )}
         <ErrBox msg={copyErr} />
 
         {/* Metric grid */}
@@ -188,6 +207,7 @@ export default function Signals({ api }) {
           <CandleChart1
             bars={bars}
             resetKey={`${s.id}_${s.pair}_${s.timeframe}`}
+            pair={s.pair}
             entry={s.entry_price} sl={s.stop_loss} tp={s.take_profit}
             markers={s.markers || []}
             supportResistance={s.support_resistance || []}
@@ -242,7 +262,7 @@ export default function Signals({ api }) {
   };
 
   return (
-    <div style={{ padding: mobile ? "12px 12px 120px 12px" : 20, maxWidth: "100%", boxSizing: "border-box", }}>
+    <div style={{ padding: 20 }}>
       {/* Sub tabs */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <Btn col={subTab === "gen" ? C.gold : C.muted} ghost={subTab !== "gen"} onClick={() => setSubTab("gen")} style={{ fontSize: 11, padding: "6px 14px" }}>⚡ Generate</Btn>
@@ -255,7 +275,7 @@ export default function Signals({ api }) {
           <div>
             <Card>
               <SectionTitle>Single Signal</SectionTitle>
-              <FG label="Pair"><Sel value={pair} onChange={e => setPair(e.target.value)} options={PAIRS} /></FG>
+              <FG label="Pair"><Sel value={pair} onChange={e => setPair(e.target.value)} options={FOREX_PAIRS} /></FG>
               <FG label="Timeframe"><Sel value={tf} onChange={e => setTf(e.target.value)} options={TFS} /></FG>
               <ErrBox msg={genErr} />
               {usage && usage.limits.signals_per_day != null && (
@@ -287,7 +307,7 @@ export default function Signals({ api }) {
                 <>
                   <div style={{ fontSize: 9, color: C.muted, letterSpacing: 1.5, marginBottom: 6 }}>PAIRS</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
-                    {PAIRS.map(p => <Pill key={p} on={bulkP.includes(p)} onClick={() => setBulkP(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])}>{p}</Pill>)}
+                    {FOREX_PAIRS.map(p => <Pill key={p} on={bulkP.includes(p)} onClick={() => setBulkP(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p])}>{p}</Pill>)}
                   </div>
                   <div style={{ fontSize: 9, color: C.muted, letterSpacing: 1.5, marginBottom: 6 }}>TIMEFRAMES</div>
                   <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
@@ -334,7 +354,7 @@ export default function Signals({ api }) {
         <Card>
           <SectionTitle>Signal History</SectionTitle>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16, alignItems: "flex-end" }}>
-            <div style={{ minWidth: 130 }}><FG label="Pair"><Sel value={hPair} onChange={e => setHPair(e.target.value)} options={PAIRS} /></FG></div>
+            <div style={{ minWidth: 130 }}><FG label="Pair"><Sel value={hPair} onChange={e => setHPair(e.target.value)} options={FOREX_PAIRS} /></FG></div>
             <div style={{ minWidth: 100 }}><FG label="Timeframe"><Sel value={hTf} onChange={e => setHTf(e.target.value)} options={TFS} /></FG></div>
             <FG label="Period">
               <div style={{ display: "flex", gap: 5 }}>

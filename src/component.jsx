@@ -1,7 +1,7 @@
-import { BrowserRouter, Routes, Route, NavLink } from "react-router-dom";
-import { useState } from "react";
+import { BrowserRouter, Routes, Route, NavLink, useNavigate } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
 import { useApi } from "./api/Api.jsx";
-import { C, NAV, bottomNav } from "./constants.jsx";
+import { C, NAV, bottomNav, moreNav } from "./constants.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Signals from "./pages/Signals.jsx";
@@ -12,6 +12,8 @@ import Journal from "./pages/Journal.jsx";
 import PricesPage from "./pages/PricesPage.jsx";
 import Profile from "./pages/Profile.jsx";
 import Billing from "./pages/Billing.jsx";
+import Notifications from "./pages/Notifications.jsx";
+import Settings from "./pages/Settings.jsx";
 import Ticker from "./components/Ticker.jsx";
 import { Btn } from "./shared/Shared.jsx";
 import { useMobile } from "./shared/Shared.jsx";
@@ -21,7 +23,7 @@ export default function App() {
     () => localStorage.getItem("fpx_t") || ""
   );
 
-  const [user, setUser] = useState(() => {
+  const [user, setRawUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("fpx_u") || "null");
     } catch {
@@ -29,9 +31,21 @@ export default function App() {
     }
   });
 
+  // Every setUser call in this app now goes through here, so React state and
+  // localStorage never drift apart. Previously pages (Profile especially) called
+  // the raw setState setter, which updated the UI for that session but silently
+  // reverted on next page refresh because localStorage was never touched —
+  // that's why saved profile/MT5/plan changes looked like they "didn't save".
+  const setUser = useCallback((updater) => {
+    setRawUser(prev => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      if (next) localStorage.setItem("fpx_u", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const api = useApi(token);
   const mobile = useMobile();
-
   const login = (tok, usr) => {
     setToken(tok);
     setUser(usr);
@@ -42,13 +56,28 @@ export default function App() {
 
   const logout = () => {
     setToken("");
-    setUser(null);
+    setRawUser(null);
 
     localStorage.removeItem("fpx_t");
     localStorage.removeItem("fpx_u");
 
     window.location.href = "/";
   };
+
+  // Refresh from the server on load, when the tab regains focus, and every 30s.
+  // This is what makes plan upgrades (Billing), balance/equity changes (trading),
+  // and provider status show up without the user having to log out and back in.
+  useEffect(() => {
+    if (!token) return;
+    const refresh = () => api.get("/auth/me").then(setUser).catch(() => {});
+    refresh();
+    const onVis = () => { if (document.visibilityState === "visible") refresh(); };
+    document.addEventListener("visibilitychange", onVis);
+    const iv = setInterval(refresh, 30000);
+    return () => { document.removeEventListener("visibilitychange", onVis); clearInterval(iv); };
+  }, [token, api]);
+
+  const [moreOpen, setMoreOpen] = useState(false);
 
   if (!token || !user)
     return (
@@ -94,6 +123,7 @@ body{
 .app{
   display:flex;
   height:100vh;
+  height:100dvh; /* dvh accounts for the Android/Chrome address+gesture bar so fixed elements aren't pushed off-screen */
   width:100%;
   overflow:hidden;
 }
@@ -105,6 +135,7 @@ body{
   display:flex;
   flex-direction:column;
   height:100vh;
+  height:100dvh;
   overflow:hidden;
 }
 
@@ -173,7 +204,8 @@ body{
               bottom:0;
               left:0;
               right:0;
-              height:65px;
+              height:calc(65px + env(safe-area-inset-bottom, 0px));
+              padding-bottom:env(safe-area-inset-bottom, 0px);
               background:${C.surf};
               border-top:1px solid ${C.border};
               z-index:999;
@@ -193,11 +225,11 @@ body{
 
             .mobile-link.active{
               color:${C.gold};
-              border-radius:4px;
+              background: ${C.gold}2;
             }
 
             .content{
-            margin-bottom:65px;
+            margin-bottom:calc(65px + env(safe-area-inset-bottom, 0px));
           }
             }
 
@@ -330,29 +362,17 @@ body{
                   fontWeight: 700,
                 }}
               >
-                {mobile ? <span>Forex<span style={{ color: C.gold }}>Pro</span></span> : ""}
-                <div
-                style={{
-                  fontSize: 9,
-                  color: C.muted,
-                  letterSpacing: 2,
-                  marginTop: 2,
-                }}
-              >
-                {// Show the current page name based on the URL path automatically after clicking on the navigation link
-                window.location.pathname === "/" ? "DASHBOARD" :
-                window.location.pathname === "/signals" ? "SIGNALS" :
-                window.location.pathname === "/copy" ? "COPY TRADING" :
-                window.location.pathname === "/providers" ? "PROVIDERS" :
-                window.location.pathname === "/education" ? "EDUCATION" :
-                window.location.pathname === "/journal" ? "JOURNAL" :
-                window.location.pathname === "/prices" ? "PRICES" :
-                window.location.pathname === "/billing" ? "BILLING" :
-                window.location.pathname === "/profile" ? "PROFILE" : ""
-              }
-                           
-            
-              </div>
+                {mobile ? "ForexPro" : ""}
+                <div style={{display: "block", marginTop: 2}}>
+                  <div style={{ fontSize: 11, color: C.muted }}>
+                     {window.location.pathname === "/"
+                      ? "Dashboard"
+                      : window.location.pathname.slice(1).charAt(0).toUpperCase() +
+                        window.location.pathname.slice(2)}
+                  </div>
+  
+                </div>
+                
               </div>
              
 
@@ -363,8 +383,38 @@ body{
                   gap: 8,
                 }}
               >
-              
-                 <NavLink to="/profile" style={{cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit"}}>
+                <NavLink
+                  to="/notifications"
+                  style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
+                           width: 32, height: 32, borderRadius: 8, textDecoration: "none",
+                           color: C.text, background: C.surf2, border: `1px solid ${C.border}` }}
+                  title="Notifications"
+                >
+                  🔔
+                  {user?.unread_notifications > 0 && (
+                    <span style={{
+                      position: "absolute", top: -3, right: -3, background: C.red, color: "#fff",
+                      fontSize: 9, fontWeight: 700, borderRadius: 999, minWidth: 15, height: 15,
+                      display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px",
+                    }}>
+                      {user.unread_notifications > 9 ? "9+" : user.unread_notifications}
+                    </span>
+                  )}
+                </NavLink>
+                <Btn
+                  col={C.muted}
+                  ghost
+                  onClick={logout}
+                  style={{
+                    fontSize: 11,
+                    padding: "5px 12px",
+                    hover: { background: C.red, color: "#fff" },
+                  }}
+                >
+                  {'➜]'}
+               
+                </Btn>
+                 <NavLink to="/profile" style={{cursor: "pointer", display: "block", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit"}}>
                   <div
                   style={{
                     width: 30,
@@ -467,6 +517,16 @@ body{
                 />
 
                 <Route
+                  path="/notifications"
+                  element={<Notifications api={api} onRead={() => api.get("/auth/me").then(setUser).catch(() => {})} />}
+                />
+
+                <Route
+                  path="/settings"
+                  element={<Settings api={api} user={user} setUser={setUser} />}
+                />
+
+                <Route
                   path="/profile"
                   element={
                     <Profile
@@ -499,7 +559,63 @@ body{
                 <span>{n.label}</span>
               </NavLink>
             ))}
+            <button
+              onClick={() => setMoreOpen(true)}
+              className="mobile-link"
+              style={{ background: "none", border: "none", fontFamily: "inherit" }}
+            >
+              <span style={{ fontSize: 18 }}>☰</span>
+              <span>More</span>
+            </button>
           </div>
+
+          {moreOpen && (
+            <div
+              onClick={() => setMoreOpen(false)}
+              style={{
+                position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 1000,
+                display: "flex", alignItems: "flex-end",
+              }}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: C.surf, width: "100%", borderTop: `1px solid ${C.border}`,
+                  borderTopLeftRadius: 16, borderTopRightRadius: 16,
+                  paddingBottom: "calc(14px + env(safe-area-inset-bottom, 0px))",
+                  maxHeight: "70vh", overflowY: "auto",
+                }}
+              >
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: C.border, margin: "10px auto" }} />
+                {moreNav.map((n) => (
+                  <NavLink
+                    key={n.id}
+                    to={`/${n.id}`}
+                    onClick={() => setMoreOpen(false)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "13px 20px", textDecoration: "none", color: C.text, fontSize: 14,
+                    }}
+                  >
+                    <span style={{ fontSize: 17, width: 22, textAlign: "center" }}>{n.icon}</span>
+                    {n.label}
+                    {n.id === "notifications" && user?.unread_notifications > 0 && (
+                      <span style={{
+                        marginLeft: "auto", background: C.red, color: "#fff", fontSize: 10, fontWeight: 700,
+                        borderRadius: 999, minWidth: 18, height: 18, display: "flex", alignItems: "center",
+                        justifyContent: "center", padding: "0 5px",
+                      }}>
+                        {user.unread_notifications > 9 ? "9+" : user.unread_notifications}
+                      </span>
+                    )}
+                  </NavLink>
+                ))}
+                <div style={{ padding: "8px 20px 0" }}>
+                  <Btn col={C.muted} ghost full onClick={() => { setMoreOpen(false); logout(); }}>Sign Out</Btn>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </>
     </BrowserRouter>
