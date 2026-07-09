@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { C } from "../constants.jsx";
-import { Card, SectionTitle, Stat, Badge, Row, Grid, Btn, FG, Inp, Sel, Modal, useMobile } from "../shared/Shared.jsx";
+import { Card, SectionTitle, Stat, Badge, Row, Grid, Btn, FG, Inp, Sel, Modal, useMobile, ErrBox } from "../shared/Shared.jsx";
 import { ago, fp, f1, usd } from "../utils/utils.js";
 import { WS_BASE } from "../api/Api.jsx";
 import { useLiveSocket } from "../hooks/useLiveSocket.js";
@@ -90,30 +90,30 @@ export default function CopyTrading({ api }) {
   };
 
   const unsub = async pid => {
-    if (!confirm("Unsubscribe from this provider?")) return;
-    try { await api.del(`/copy/unsubscribe/${pid}`); load(); } catch (e) { alert(e.message); }
+    try { await api.del(`/copy/unsubscribe/${pid}`); load(); } catch (e) { setActionErr(e.message); }
   };
 
   const navigate = useNavigate();
   const [actionBusy, setActionBusy] = useState(null);
+  const [actionErr, setActionErr] = useState("");
+  const [confirmCloseId, setConfirmCloseId] = useState(null); // in-app confirm instead of window.confirm (unreliable in Android WebViews)
 
   const approveTrade = async (id) => {
-    setActionBusy(id);
+    setActionBusy(id); setActionErr("");
     try { await api.post(`/copy/trades/${id}/approve`, {}); load(); }
-    catch (e) { alert(e.message); }
+    catch (e) { setActionErr(e.message); }
     finally { setActionBusy(null); }
   };
   const declineTrade = async (id) => {
-    setActionBusy(id);
+    setActionBusy(id); setActionErr("");
     try { await api.post(`/copy/trades/${id}/decline`, {}); load(); }
-    catch (e) { alert(e.message); }
+    catch (e) { setActionErr(e.message); }
     finally { setActionBusy(null); }
   };
   const closeTrade = async (id) => {
-    if (!confirm("Close this trade at the current market price?")) return;
-    setActionBusy(id);
+    setActionBusy(id); setActionErr(""); setConfirmCloseId(null);
     try { await api.post(`/copy/trades/${id}/close`, {}); load(); }
-    catch (e) { alert(e.message); }
+    catch (e) { setActionErr(e.message); }
     finally { setActionBusy(null); }
   };
   const viewChart = (t) => navigate(`/prices?pair=${t.pair}&copyTradeId=${t.id}`);
@@ -123,6 +123,7 @@ export default function CopyTrading({ api }) {
 
   return (
     <div style={{ padding: mobile ? 12 : 20 }}>
+      <ErrBox msg={actionErr} />
       <Grid cols="repeat(5,minmax(0,1fr))" mobileCols="repeat(2,minmax(0,1fr))" gap={12} style={{ marginBottom: 18 }}>
         <Stat label="Total Trades" value={stats.total  || 0}                        color={C.blue} />
         <Stat label="Open"         value={stats.open   || 0}                        color={C.gold} />
@@ -136,7 +137,11 @@ export default function CopyTrading({ api }) {
         <Card>
           <SectionTitle>Active Subscriptions</SectionTitle>
           {subs.map(sub => (
-            <Row key={sub.provider_id} style={{ flexWrap: "wrap", gap: 10 }}>
+            <Row key={sub.provider_id} style={{ display: "flex",
+                                         flexDirection: "row", // Guarantees row alignment on mobile
+                                         justifyContent: "space-between",
+                                         alignItems: "center",
+                                        cursor: "pointer" }}>
               <strong style={{ flex: 1, fontSize: 13 }}>{sub.display_name}</strong>
               <span style={{ fontSize: 11, color: C.muted }}>WR {sub.win_rate}%</span>
               <span style={{ fontSize: 11, color: C.muted }}>Risk {sub.risk_pct}%</span>
@@ -210,10 +215,19 @@ export default function CopyTrading({ api }) {
                     <Badge col={t.execution_mode === "mt5" ? C.purple : C.muted}>{t.execution_mode === "mt5" ? "MT5" : "SIM"}</Badge>
                   </div>
                   {t.status === "open" && (
-                    <Btn col={C.red} ghost onClick={(e) => { e.stopPropagation(); closeTrade(t.id); }} disabled={actionBusy === t.id}
-                         style={{ marginTop: 8, width: "100%", fontSize: 11, padding: "5px 0" }}>
-                      {actionBusy === t.id ? "Closing…" : "Close Trade"}
-                    </Btn>
+                    confirmCloseId === t.id ? (
+                      <div style={{ display: "flex", gap: 6, marginTop: 8 }} onClick={e => e.stopPropagation()}>
+                        <Btn col={C.red} onClick={() => closeTrade(t.id)} disabled={actionBusy === t.id} style={{ flex: 1, fontSize: 11, padding: "5px 0" }}>
+                          {actionBusy === t.id ? "Closing…" : "Confirm Close"}
+                        </Btn>
+                        <Btn col={C.muted} ghost onClick={() => setConfirmCloseId(null)} style={{ flex: 1, fontSize: 11, padding: "5px 0" }}>Cancel</Btn>
+                      </div>
+                    ) : (
+                      <Btn col={C.red} ghost onClick={(e) => { e.stopPropagation(); setConfirmCloseId(t.id); }} disabled={actionBusy === t.id}
+                           style={{ marginTop: 8, width: "100%", fontSize: 11, padding: "5px 0" }}>
+                        Close Trade
+                      </Btn>
+                    )
                   )}
                 </div>
               ))}
@@ -238,10 +252,19 @@ export default function CopyTrading({ api }) {
                     <Badge col={t.execution_mode === "mt5" ? C.purple : C.muted}>{t.execution_mode === "mt5" ? "MT5" : "SIM"}</Badge>
                   </span>
                   {t.status === "open" ? (
-                    <Btn col={C.red} ghost onClick={(e) => { e.stopPropagation(); closeTrade(t.id); }} disabled={actionBusy === t.id}
-                         style={{ fontSize: 10, padding: "4px 8px" }}>
-                      {actionBusy === t.id ? "…" : "Close"}
-                    </Btn>
+                    confirmCloseId === t.id ? (
+                      <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                        <Btn col={C.red} onClick={() => closeTrade(t.id)} disabled={actionBusy === t.id} style={{ fontSize: 10, padding: "4px 6px" }}>
+                          {actionBusy === t.id ? "…" : "Sure?"}
+                        </Btn>
+                        <Btn col={C.muted} ghost onClick={() => setConfirmCloseId(null)} style={{ fontSize: 10, padding: "4px 6px" }}>✕</Btn>
+                      </div>
+                    ) : (
+                      <Btn col={C.red} ghost onClick={(e) => { e.stopPropagation(); setConfirmCloseId(t.id); }} disabled={actionBusy === t.id}
+                           style={{ fontSize: 10, padding: "4px 8px" }}>
+                        Close
+                      </Btn>
+                    )
                   ) : <span />}
                 </div>
               ))}

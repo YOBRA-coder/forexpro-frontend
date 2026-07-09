@@ -103,13 +103,11 @@ export default function Dashboard({ api }) {
                                 <Row
                                     key={s.id}
                                     onClick={() => navigate(`/signals?id=${s.id}`)}
-                                    style={{ 
-                                         display: "flex",
+                                    style={{ display: "flex",
                                          flexDirection: "row", // Guarantees row alignment on mobile
                                          justifyContent: "space-between",
                                          alignItems: "center",
-                                        cursor: "pointer" 
-                                    }}
+                                        cursor: "pointer"  }}
                                 >
                                     <strong
                                         style={{
@@ -224,11 +222,11 @@ export default function Dashboard({ api }) {
                                 key={p.pair}
                                 onClick={() => navigate(`/prices?pair=${p.pair}`)}
                                 style={{
-                                    display: "flex",
-                                    flexDirection: "row", // Guarantees row alignment on mobile
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    cursor: "pointer",
+                                  display: "flex",
+                                  flexDirection: "row", // Guarantees row alignment on mobile
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  cursor: "pointer" 
                                 }}
                             >
                                 <strong style={{ fontSize: 12 }}>

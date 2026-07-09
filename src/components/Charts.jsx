@@ -292,7 +292,7 @@ export default function CandleChart1({
       chartRef.current = null;
       candleSeriesRef.current = null;
     };
-  }, [resetKey, bars.length, indicators.ema, indicators.bb, indicators.sr, indicators.trendline, indicators.volume]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetKey, bars, indicators.ema, indicators.bb, indicators.sr, indicators.trendline, indicators.volume]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Live tick / candle-close updates — no chart rebuild, just series.update() ──
   useEffect(() => {

@@ -191,7 +191,7 @@ export default function Signals({ api }) {
         <ErrBox msg={copyErr} />
 
         {/* Metric grid */}
-        <Grid cols="repeat(6,1fr)" gap={10} style={{ marginBottom: 13 }}>
+        <Grid cols="repeat(5,minmax(0,1fr))" mobileCols="repeat(2,minmax(0,1fr))" gap={12} style={{ marginBottom: 18 }}>
           {[["ENTRY", fp(s.entry_price), C.text], ["STOP LOSS", fp(s.stop_loss), C.red], ["TAKE PROFIT", fp(s.take_profit), C.green],
             ["SL PIPS", f1(s.sl_pips), C.red], ["TP PIPS", f1(s.tp_pips), C.green], ["R:R", `1:${s.risk_reward}`, C.gold],
           ].map(([l, v, c]) => (

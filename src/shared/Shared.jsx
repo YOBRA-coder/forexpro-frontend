@@ -434,10 +434,10 @@ const Modal = ({ onClose, children }) => {
         inset: 0,
         background: "rgba(0,0,0,.65)",
         display: "flex",
-        alignItems: mobile ? "flex-end" : "center",
+        alignItems: "center",
         justifyContent: "center",
         zIndex: 99,
-        padding: mobile ? 0 : 20,
+        padding: mobile ? 14 : 20,
       }}
       onClick={onClose}
     >
@@ -445,11 +445,11 @@ const Modal = ({ onClose, children }) => {
         style={{
           background: C.surf,
           border: `1px solid ${C.border}`,
-          borderRadius: mobile ? "14px 14px 0 0" : 13,
+          borderRadius: 13,
           padding: mobile ? 18 : 26,
           width: mobile ? "100%" : 460,
           maxWidth: "100%",
-          maxHeight: "90vh",
+          maxHeight: "85dvh",
           overflowY: "auto",
           boxSizing: "border-box",
         }}
@@ -486,11 +486,12 @@ const ProgressBar = ({ pct, col = C.gold }) => (
 );
 
 // ─── Row ─────────────────────────────────────────────────────────────────────
-const Row = ({ children, style = {} }) => {
+const Row = ({ children, style = {}, onClick, ...rest }) => {
   const mobile = useMobile();
 
   return (
     <div
+      onClick={onClick}
       style={{
         display: "flex",
         flexDirection: mobile ? "column" : "row",
@@ -503,6 +504,7 @@ const Row = ({ children, style = {} }) => {
         boxSizing: "border-box",
         ...style,
       }}
+      {...rest}
     >
       {children}
     </div>

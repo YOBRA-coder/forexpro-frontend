@@ -15,8 +15,8 @@ import Billing from "./pages/Billing.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Settings from "./pages/Settings.jsx";
 import Ticker from "./components/Ticker.jsx";
-import { Btn } from "./shared/Shared.jsx";
-import { useMobile } from "./shared/Shared.jsx";
+import { Btn, useMobile } from "./shared/Shared.jsx";
+
 
 export default function App() {
   const [token, setToken] = useState(
@@ -44,8 +44,19 @@ export default function App() {
     });
   }, []);
 
-  const api = useApi(token);
+  const logout = useCallback(() => {
+    setToken("");
+    setRawUser(null);
+
+    localStorage.removeItem("fpx_t");
+    localStorage.removeItem("fpx_u");
+
+    window.location.href = "/";
+  }, []);
+
+  const api = useApi(token, logout);
   const mobile = useMobile();
+
   const login = (tok, usr) => {
     setToken(tok);
     setUser(usr);
@@ -54,22 +65,21 @@ export default function App() {
     localStorage.setItem("fpx_u", JSON.stringify(usr));
   };
 
-  const logout = () => {
-    setToken("");
-    setRawUser(null);
-
-    localStorage.removeItem("fpx_t");
-    localStorage.removeItem("fpx_u");
-
-    window.location.href = "/";
-  };
-
   // Refresh from the server on load, when the tab regains focus, and every 30s.
   // This is what makes plan upgrades (Billing), balance/equity changes (trading),
   // and provider status show up without the user having to log out and back in.
+  // /auth/me also returns a freshly-signed token on every call (sliding session) —
+  // as long as the app is used at least once within the 7-day window, the session
+  // renews itself instead of hard-expiring and forcing a re-login mid-use.
   useEffect(() => {
     if (!token) return;
-    const refresh = () => api.get("/auth/me").then(setUser).catch(() => {});
+    const refresh = () => api.get("/auth/me").then(d => {
+      setUser(d);
+      if (d.token && d.token !== token) {
+        setToken(d.token);
+        localStorage.setItem("fpx_t", d.token);
+      }
+    }).catch(() => {});
     refresh();
     const onVis = () => { if (document.visibilityState === "visible") refresh(); };
     document.addEventListener("visibilitychange", onVis);
@@ -161,7 +171,7 @@ body{
   display:flex;
   flex-direction:column;
 
-  overflow-y:auto;
+  overflow-y:hidden;
 }
 
           .nav-btn{
@@ -204,7 +214,7 @@ body{
               bottom:0;
               left:0;
               right:0;
-              height:calc(65px + env(safe-area-inset-bottom, 0px));
+              height:calc(55px + env(safe-area-inset-bottom, 0px));
               padding-bottom:env(safe-area-inset-bottom, 0px);
               background:${C.surf};
               border-top:1px solid ${C.border};
@@ -225,11 +235,11 @@ body{
 
             .mobile-link.active{
               color:${C.gold};
-              background: ${C.gold}2;
+              background:${C.gold}2;
             }
 
             .content{
-            margin-bottom:calc(65px + env(safe-area-inset-bottom, 0px));
+            margin-bottom:calc(55px + env(safe-area-inset-bottom, 0px));
           }
             }
 
@@ -362,16 +372,54 @@ body{
                   fontWeight: 700,
                 }}
               >
-                {mobile ? "ForexPro" : ""}
-                <div style={{display: "block", marginTop: 2}}>
-                  <div style={{ fontSize: 11, color: C.muted }}>
-                     {window.location.pathname === "/"
-                      ? "Dashboard"
-                      : window.location.pathname.slice(1).charAt(0).toUpperCase() +
-                        window.location.pathname.slice(2)}
-                  </div>
-  
-                </div>
+                {mobile ? "ForexPro" : "Forex Professional Platform"}
+       
+              <div
+                style={{
+                  fontSize: 10,
+                  color: C.gold,
+                  letterSpacing: 2,
+                  marginTop: 2,
+                }}
+              >
+                {//navigation name based on the current route
+                window.location.pathname === "/"
+                  ? "DASHBOARD"
+                  : window.location.pathname === "/signals"
+                  ? "SIGNALS"
+                  : window.location.pathname === "/copy"
+                  ? "COPY TRADING"
+                  : window.location.pathname === "/providers"
+                  ? "PROVIDERS"
+                  : window.location.pathname === "/education"
+                  ? "EDUCATION"
+                  : window.location.pathname === "/journal"
+                  ? "JOURNAL"
+                  : window.location.pathname === "/prices"
+                  ? "PRICES"
+                  : window.location.pathname === "/billing"
+                  ? "BILLING"
+                  : window.location.pathname === "/notifications"
+                  ? "NOTIFICATIONS"
+                  : window.location.pathname === "/settings"
+                  ? "SETTINGS"
+                  : window.location.pathname === "/profile"
+                  ? "PROFILE"
+                  : ""}
+              </div>
+          
+
+              <div
+                style={{
+                  fontSize: 9,
+                  color: C.muted,
+                  letterSpacing: 2,
+                  marginTop: 2,
+                }}
+              >
+                  {user?.plan?.toUpperCase()} · $
+                  {Number(user?.balance || 0).toLocaleString()}
+              </div>
                 
               </div>
              
@@ -401,20 +449,21 @@ body{
                     </span>
                   )}
                 </NavLink>
-                <Btn
-                  col={C.muted}
+                <div
+                 
                   ghost
                   onClick={logout}
                   style={{
                     fontSize: 11,
                     padding: "5px 12px",
-                    hover: { background: C.red, color: "#fff" },
                   }}
                 >
-                  {'➜]'}
-               
-                </Btn>
-                 <NavLink to="/profile" style={{cursor: "pointer", display: "block", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit"}}>
+                  <span style={{  position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
+                           width: 32, height: 32, borderRadius: 8, textDecoration: "none",
+                           color: C.gold, background: C.surf2, border: `1px solid ${C.border}`, cursor: "pointer" }}
+>⎋</span>
+                </div>
+                 <NavLink to="/profile" style={{cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit"}}>
                   <div
                   style={{
                     width: 30,
@@ -430,18 +479,14 @@ body{
                   }}
                 >
                   {user?.username?.[0]?.toUpperCase()}
+             
                 </div>
+      
+                              
                  
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: C.muted,
-                    }}
-                  >
-                    {user?.plan?.toUpperCase()} · $
-                    {Number(user?.balance || 0).toLocaleString()}
-                  </div>
                 </NavLink>
+               
+
                 
               </div>
             </div>
@@ -551,6 +596,7 @@ body{
                     ? "mobile-link active"
                     : "mobile-link"
                 }
+               
               >
                 <span style={{ fontSize: 18 }}>
                   {n.icon}
