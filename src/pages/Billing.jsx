@@ -12,7 +12,7 @@ function money(n, ccy) {
 }
 
 // ── M-Pesa STK push modal: phone entry -> push -> poll status ──
-function MpesaModal({ api, kind, plan, amount, onClose, onSuccess }) {
+function MpesaModal({ api, kind, plan, amount, amountUsd, onClose, onSuccess }) {
   const [phone, setPhone]   = useState("");
   const [stage, setStage]   = useState("input"); // input | pushed | success | failed
   const [err, setErr]       = useState("");
@@ -27,7 +27,7 @@ function MpesaModal({ api, kind, plan, amount, onClose, onSuccess }) {
       return;
     }
     try {
-      const res = await api.post("/payments/mpesa/stkpush", { phone, kind, plan });
+      const res = await api.post("/payments/mpesa/stkpush", { phone, kind, plan, amount_usd: amountUsd });
       setStage("pushed");
       let tries = 0;
       pollRef.current = setInterval(async () => {
@@ -54,7 +54,7 @@ function MpesaModal({ api, kind, plan, amount, onClose, onSuccess }) {
     <Modal onClose={onClose}>
       <SectionTitle>M-Pesa Payment</SectionTitle>
       <div style={{ fontSize: 13, marginBottom: 14 }}>
-        {kind === "registration" ? "One-time registration fee" : `${plan} — monthly subscription`}: <strong style={{ color: C.gold }}>{money(amount, "KES")}</strong>
+        {kind === "registration" ? "One-time registration fee" : kind === "wallet_deposit" ? "Wallet deposit" : `${plan} — monthly subscription`}: <strong style={{ color: C.gold }}>{money(amount, "KES")}</strong>
       </div>
 
       {stage === "input" && (
@@ -178,6 +178,8 @@ export default function Billing({ api, user, setUser }) {
         </Card>
       )}
 
+      <WalletCard api={api} user={user} setUser={setUser} />
+
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <SectionTitle>Subscription Plans</SectionTitle>
@@ -259,5 +261,158 @@ function UsageStat({ label, value, full }) {
       <div style={{ fontSize: 10, color: C.muted, marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 800, color: full ? C.gold : C.text }}>{value}</div>
     </div>
+  );
+}
+
+function WalletCard({ api, user, setUser }) {
+  const [wallet, setWallet]   = useState(null);
+  const [txs, setTxs]         = useState(null);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [depAmount, setDepAmount] = useState(10);
+  const [wdAmount, setWdAmount]   = useState(10);
+  const [wdPhone, setWdPhone]     = useState("");
+  const [wdBusy, setWdBusy]       = useState(false);
+  const [wdErr, setWdErr]         = useState("");
+  const [wdOk, setWdOk]           = useState("");
+
+  const load = () => {
+    api.get("/wallet/summary").then(setWallet).catch(() => {});
+    api.get("/wallet/transactions").then(d => setTxs(d.transactions || [])).catch(() => {});
+  };
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const submitWithdraw = async () => {
+    setWdBusy(true); setWdErr(""); setWdOk("");
+    try {
+      await api.post("/wallet/withdraw/request", { amount_usd: Number(wdAmount), phone: wdPhone });
+      setWdOk("Withdrawal requested — you'll get a notification once it's sent.");
+      setShowWithdraw(false);
+      load();
+      const me = await api.get("/auth/me");
+      setUser && setUser(me);
+    } catch (e) { setWdErr(e.message); }
+    finally { setWdBusy(false); }
+  };
+
+  return (
+    <Card>
+      <SectionTitle>Wallet</SectionTitle>
+      <div style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5 }}>
+        This balance funds <strong>simulated copy trades</strong> in the app (including MT5-bridge trades — the app
+        reserves/releases margin here for bookkeeping even when the real fill happens on your broker account).
+        It is <strong>not</strong> the same as money sitting in your MT5 broker account — that's managed by your
+        broker directly (Exness/FBS/etc.) and withdrawn through their own systems, not this app.
+      </div>
+
+      <Grid cols="repeat(3,1fr)" mobileCols="1fr" gap={10} style={{ marginBottom: 14 }}>
+        <UsageStat label="Wallet balance" value={wallet ? `$${wallet.balance.toFixed(2)}` : "…"} />
+        <UsageStat label="Equity (incl. floating P&L)" value={wallet ? `$${wallet.equity.toFixed(2)}` : "…"} />
+        <UsageStat label="Pending withdrawals" value={wallet ? `$${wallet.pending_withdrawals_usd.toFixed(2)}` : "…"} full={wallet?.pending_withdrawals_usd > 0} />
+      </Grid>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        <Btn col={C.green} onClick={() => setShowDeposit(true)}>+ Deposit (M-Pesa)</Btn>
+        <Btn col={C.gold} ghost onClick={() => setShowWithdraw(true)}>Request Withdrawal</Btn>
+      </div>
+      {wdOk && <OkBox msg={wdOk} />}
+
+      {txs && txs.length > 0 && (
+        <>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, marginBottom: 8 }}>RECENT TRANSACTIONS</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {txs.slice(0, 8).map(t => (
+              <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+                                        fontSize: 12, padding: "8px 10px", background: C.surf2, borderRadius: 8 }}>
+                <span>{t.type === "deposit" ? "⬇" : "⬆"} {t.type === "deposit" ? "Deposit" : "Withdrawal"} · {t.phone}</span>
+                <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <strong style={{ color: t.type === "deposit" ? C.green : C.text }}>
+                    {t.type === "deposit" ? "+" : "-"}${t.amount_usd.toFixed(2)}
+                  </strong>
+                  <Badge col={t.status === "completed" ? C.green : t.status === "rejected" ? C.red : C.gold}>
+                    {t.status.toUpperCase()}
+                  </Badge>
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {showDeposit && (
+        <Modal onClose={() => setShowDeposit(false)}>
+          <SectionTitle>Deposit to Wallet</SectionTitle>
+          <FG label="Amount (USD)"><Inp type="number" min="1" step="1" value={depAmount} onChange={e => setDepAmount(e.target.value)} /></FG>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>You'll be charged the KES equivalent via M-Pesa STK push.</div>
+          <MpesaModalInline api={api} kind="wallet_deposit" amountUsd={Number(depAmount) || 0}
+            onClose={() => setShowDeposit(false)} onSuccess={() => { load(); api.get("/auth/me").then(setUser); }} />
+        </Modal>
+      )}
+
+      {showWithdraw && (
+        <Modal onClose={() => setShowWithdraw(false)}>
+          <SectionTitle>Request Withdrawal</SectionTitle>
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>
+            Funds are reserved immediately and paid out manually to your M-Pesa number — this isn't instant.
+          </div>
+          <FG label="Amount (USD)"><Inp type="number" min="1" step="1" value={wdAmount} onChange={e => setWdAmount(e.target.value)} /></FG>
+          <FG label="M-Pesa phone number"><Inp placeholder="0712345678" value={wdPhone} onChange={e => setWdPhone(e.target.value)} /></FG>
+          <ErrBox msg={wdErr} />
+          <Btn col={C.gold} full onClick={submitWithdraw} disabled={wdBusy}>{wdBusy ? "Submitting…" : "Request Withdrawal"}</Btn>
+        </Modal>
+      )}
+    </Card>
+  );
+}
+
+// Deposit needs its own trigger (no registration/plan context) — thin wrapper around
+// the same M-Pesa STK push + poll flow as MpesaModal, without double-nesting <Modal>.
+function MpesaModalInline({ api, kind, amountUsd, onClose, onSuccess }) {
+  const [phone, setPhone] = useState("");
+  const [stage, setStage] = useState("input");
+  const [err, setErr]     = useState("");
+  const pollRef = useRef(null);
+  useEffect(() => () => clearInterval(pollRef.current), []);
+
+  const push = async () => {
+    setErr("");
+    if (!/^(0|\+?254)?7\d{8}$/.test(phone.replace(/\s/g, ""))) { setErr("Enter a valid Safaricom number, e.g. 0712345678"); return; }
+    if (!amountUsd || amountUsd <= 0) { setErr("Enter a valid amount"); return; }
+    try {
+      const res = await api.post("/payments/mpesa/stkpush", { phone, kind, amount_usd: amountUsd });
+      setStage("pushed");
+      let tries = 0;
+      pollRef.current = setInterval(async () => {
+        tries += 1;
+        try {
+          const s = await api.post("/payments/mpesa/status", { checkout_request_id: res.checkout_request_id });
+          if (s.status === "success") { clearInterval(pollRef.current); setStage("success"); onSuccess && onSuccess(); }
+          else if (s.status === "failed") { clearInterval(pollRef.current); setStage("failed"); }
+        } catch { /* keep polling */ }
+        if (tries > 40) { clearInterval(pollRef.current); setStage("failed"); }
+      }, 3000);
+    } catch (e) { setErr(e.message || "Could not start M-Pesa payment"); }
+  };
+
+  if (stage === "success") return <OkBox msg="Deposit received — your wallet balance is updated." />;
+  if (stage === "failed") return (
+    <>
+      <ErrBox msg="Payment wasn't completed." />
+      <Btn col={C.gold} full onClick={() => setStage("input")}>Try Again</Btn>
+    </>
+  );
+  if (stage === "pushed") return (
+    <div style={{ textAlign: "center", padding: "10px 0" }}>
+      <div style={{ width: 34, height: 34, margin: "0 auto 14px", border: `3px solid ${C.border}`, borderTopColor: C.gold, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ fontSize: 12 }}>Check your phone — enter your M-Pesa PIN.</div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+  return (
+    <>
+      <FG label="M-Pesa phone number"><Inp placeholder="0712345678" value={phone} onChange={e => setPhone(e.target.value)} /></FG>
+      <ErrBox msg={err} />
+      <Btn col={C.green} full onClick={push}>Send STK Push</Btn>
+    </>
   );
 }

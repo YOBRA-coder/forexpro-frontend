@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { NavLink, useSearchParams } from "react-router-dom";
 import { C } from "../constants.jsx";
-import { Card, SectionTitle, Grid, Btn, Sel, FG, Pill, Stat } from "../shared/Shared.jsx";
+import { Card, SectionTitle, Grid, Btn, Sel, FG, Pill } from "../shared/Shared.jsx";
 import { fp, f1 } from "../utils/utils.js";
 import { CandleChart1, ConfRing, SigCard } from "../components/Charts.jsx";
 import { PAIRS, FOREX_PAIRS, TFS } from "../components/Charts.jsx";
@@ -89,10 +89,13 @@ export default function Signals({ api }) {
       .then(d => setBars(d.candles || [])).catch(() => {});
   }, [sel, api]);
 
+  const [delayInfo, setDelayInfo] = useState(null); // { plan_delay_minutes, realtime_signals_locked }
+
   // Load latest on mount; if Dashboard linked here with ?id=123, open that exact signal.
   useEffect(() => {
     api.get("/signals/latest?limit=20").then(d => {
       setSigs(d.signals || []);
+      setDelayInfo({ delay: d.plan_delay_minutes || 0, locked: d.realtime_signals_locked || 0 });
       const wantId = searchParams.get("id");
       if (wantId) {
         const found = (d.signals || []).find(s => String(s.id) === wantId);
@@ -191,7 +194,7 @@ export default function Signals({ api }) {
         <ErrBox msg={copyErr} />
 
         {/* Metric grid */}
-        <Grid cols="repeat(5,minmax(0,1fr))" mobileCols="repeat(2,minmax(0,1fr))" gap={12} style={{ marginBottom: 18 }}>
+        <Grid cols="repeat(6,1fr)" gap={10} style={{ marginBottom: 13 }}>
           {[["ENTRY", fp(s.entry_price), C.text], ["STOP LOSS", fp(s.stop_loss), C.red], ["TAKE PROFIT", fp(s.take_profit), C.green],
             ["SL PIPS", f1(s.sl_pips), C.red], ["TP PIPS", f1(s.tp_pips), C.green], ["R:R", `1:${s.risk_reward}`, C.gold],
           ].map(([l, v, c]) => (
@@ -268,6 +271,15 @@ export default function Signals({ api }) {
         <Btn col={subTab === "gen" ? C.gold : C.muted} ghost={subTab !== "gen"} onClick={() => setSubTab("gen")} style={{ fontSize: 11, padding: "6px 14px" }}>⚡ Generate</Btn>
         <Btn col={subTab === "history" ? C.gold : C.muted} ghost={subTab !== "history"} onClick={() => setSubTab("history")} style={{ fontSize: 11, padding: "6px 14px" }}>📊 History</Btn>
       </div>
+
+      {delayInfo && delayInfo.delay > 0 && delayInfo.locked > 0 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+                      background: `${C.gold}14`, border: `1px solid ${C.gold}40`, borderRadius: 8,
+                      padding: "9px 12px", marginBottom: 14, fontSize: 12, flexWrap: "wrap" }}>
+          <span>🔒 {delayInfo.locked} real-time signal{delayInfo.locked === 1 ? "" : "s"} available now — Free plan shows signals {delayInfo.delay} min delayed.</span>
+          <NavLink to="/billing" style={{ color: C.gold, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>Upgrade for real-time →</NavLink>
+        </div>
+      )}
 
       {subTab === "gen" && (
         <Grid cols="290px 1fr" gap={16}>

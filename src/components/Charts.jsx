@@ -144,6 +144,8 @@ export default function CandleChart1({
   const candleSeriesRef = useRef(null);
   const lastBarTimeRef = useRef(null);
   const decimals = pairDecimals(pair);
+  const visibleRangeRef = useRef(null);   // preserved pan/zoom across data-only rebuilds
+  const lastResetKeyRef = useRef(null);   // only refit the view on a genuine pair/timeframe change
 
   // ── Full (re)build: runs on mount and whenever the pair/timeframe/bar-set changes ──
   useEffect(() => {
@@ -280,13 +282,25 @@ export default function CandleChart1({
       }
     }
 
-    chart.timeScale().fitContent();
+    // A new candle closing shouldn't yank the chart back to "fit everything" if the
+    // user has panned/zoomed to look at something specific — only refit on an actual
+    // pair/timeframe/indicator change (a fresh resetKey), otherwise restore exactly
+    // where they were looking.
+    const isFreshView = lastResetKeyRef.current !== resetKey;
+    lastResetKeyRef.current = resetKey;
+    if (isFreshView || !visibleRangeRef.current) {
+      chart.timeScale().fitContent();
+    } else {
+      try { chart.timeScale().setVisibleLogicalRange(visibleRangeRef.current); }
+      catch { chart.timeScale().fitContent(); }
+    }
 
     const resize = () => { if (ref.current) chart.applyOptions({ width: ref.current.clientWidth }); };
     window.addEventListener("resize", resize);
 
     return () => {
       window.removeEventListener("resize", resize);
+      try { visibleRangeRef.current = chart.timeScale().getVisibleLogicalRange(); } catch { /* noop */ }
       priceLines.forEach((pl) => { try { candleSeries.removePriceLine(pl); } catch { /* noop */ } });
       chart.remove();
       chartRef.current = null;
@@ -386,11 +400,11 @@ const TFS   = ["M1","M5","M15","M30","H1","H4","D1","W1"];
 // Broker-style quote precision — JPY crosses & metals trade in fewer decimals,
 // everything else uses the standard 4-decimal (fractional-pip) forex convention.
 function pairDecimals(pair) {
-  if (!pair) return 5;
+  if (!pair) return 4;
   if (pair.includes("JPY")) return 3;
   if (pair === "XAUUSD") return 2;
   if (pair === "BTCUSD") return 2;
-  return 5;
+  return 4;
 }
 
 export { ConfRing, CandleChart1, SigCard, PAIRS, FOREX_PAIRS, TFS, pairDecimals };

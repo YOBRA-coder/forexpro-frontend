@@ -230,10 +230,7 @@ export default function Providers({ api }) {
                 background: C.surf, border: `1px solid ${following ? C.gold : C.border}`,
                 borderRadius: 10, padding: 16, marginBottom: 10, cursor: "pointer", transition: "border-color .15s",
               }}>
-                <div style={{  display: "flex",
-                                  flexDirection: "row", // Guarantees row alignment on mobile
-                                  justifyContent: "space-between",
-                                  alignItems: "center"}}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                   <div style={{ width: 42, height: 42, borderRadius: "50%", background: `linear-gradient(135deg,${C.blue},${C.purple})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
                     {(p.display_name || "??")[0]}{(p.display_name || "??")[1]}
                   </div>

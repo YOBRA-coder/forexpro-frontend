@@ -15,8 +15,7 @@ import Billing from "./pages/Billing.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Settings from "./pages/Settings.jsx";
 import Ticker from "./components/Ticker.jsx";
-import { Btn, useMobile } from "./shared/Shared.jsx";
-
+import { Btn } from "./shared/Shared.jsx";
 
 export default function App() {
   const [token, setToken] = useState(
@@ -55,7 +54,6 @@ export default function App() {
   }, []);
 
   const api = useApi(token, logout);
-  const mobile = useMobile();
 
   const login = (tok, usr) => {
     setToken(tok);
@@ -171,7 +169,7 @@ body{
   display:flex;
   flex-direction:column;
 
-  overflow-y:hidden;
+  overflow-y:auto;
 }
 
           .nav-btn{
@@ -214,7 +212,7 @@ body{
               bottom:0;
               left:0;
               right:0;
-              height:calc(55px + env(safe-area-inset-bottom, 0px));
+              height:calc(65px + env(safe-area-inset-bottom, 0px));
               padding-bottom:env(safe-area-inset-bottom, 0px);
               background:${C.surf};
               border-top:1px solid ${C.border};
@@ -235,11 +233,11 @@ body{
 
             .mobile-link.active{
               color:${C.gold};
-              background:${C.gold}2;
+              background:${C.gold}16;
             }
 
             .content{
-            margin-bottom:calc(55px + env(safe-area-inset-bottom, 0px));
+            margin-bottom:calc(65px + env(safe-area-inset-bottom, 0px));
           }
             }
 
@@ -372,55 +370,7 @@ body{
                   fontWeight: 700,
                 }}
               >
-                {mobile ? "ForexPro" : "Forex Professional Platform"}
-       
-              <div
-                style={{
-                  fontSize: 10,
-                  color: C.gold,
-                  letterSpacing: 2,
-                  marginTop: 2,
-                }}
-              >
-                {//navigation name based on the current route
-                window.location.pathname === "/"
-                  ? "DASHBOARD"
-                  : window.location.pathname === "/signals"
-                  ? "SIGNALS"
-                  : window.location.pathname === "/copy"
-                  ? "COPY TRADING"
-                  : window.location.pathname === "/providers"
-                  ? "PROVIDERS"
-                  : window.location.pathname === "/education"
-                  ? "EDUCATION"
-                  : window.location.pathname === "/journal"
-                  ? "JOURNAL"
-                  : window.location.pathname === "/prices"
-                  ? "PRICES"
-                  : window.location.pathname === "/billing"
-                  ? "BILLING"
-                  : window.location.pathname === "/notifications"
-                  ? "NOTIFICATIONS"
-                  : window.location.pathname === "/settings"
-                  ? "SETTINGS"
-                  : window.location.pathname === "/profile"
-                  ? "PROFILE"
-                  : ""}
-              </div>
-          
-
-              <div
-                style={{
-                  fontSize: 9,
-                  color: C.muted,
-                  letterSpacing: 2,
-                  marginTop: 2,
-                }}
-              >
-                  {user?.plan?.toUpperCase()} · $
-                  {Number(user?.balance || 0).toLocaleString()}
-              </div>
-                
+                ForexPro
               </div>
              
 
@@ -449,8 +399,8 @@ body{
                     </span>
                   )}
                 </NavLink>
-                <div
-                 
+                <Btn
+                  col={C.muted}
                   ghost
                   onClick={logout}
                   style={{
@@ -458,11 +408,8 @@ body{
                     padding: "5px 12px",
                   }}
                 >
-                  <span style={{  position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
-                           width: 32, height: 32, borderRadius: 8, textDecoration: "none",
-                           color: C.gold, background: C.surf2, border: `1px solid ${C.border}`, cursor: "pointer" }}
->⎋</span>
-                </div>
+                  Sign Out
+                </Btn>
                  <NavLink to="/profile" style={{cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit"}}>
                   <div
                   style={{
@@ -479,14 +426,18 @@ body{
                   }}
                 >
                   {user?.username?.[0]?.toUpperCase()}
-             
                 </div>
-      
-                              
                  
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: C.muted,
+                    }}
+                  >
+                    {user?.plan?.toUpperCase()} · $
+                    {Number(user?.balance || 0).toLocaleString()}
+                  </div>
                 </NavLink>
-               
-
                 
               </div>
             </div>
@@ -596,7 +547,6 @@ body{
                     ? "mobile-link active"
                     : "mobile-link"
                 }
-               
               >
                 <span style={{ fontSize: 18 }}>
                   {n.icon}

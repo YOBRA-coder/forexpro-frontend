@@ -45,7 +45,7 @@ export default function Ticker({ api }) {
           boxShadow: status === "open" ? `0 0 6px ${C.green}` : "none",
         }}
       />
-      <div style={{ display: "flex", gap: 36, whiteSpace: "nowrap", padding: "0 16px", animation: "ticker 180s linear infinite" }}>
+      <div style={{ display: "flex", gap: 36, whiteSpace: "nowrap", padding: "0 16px", animation: "ticker 40s linear infinite" }}>
         {[...items, ...items]}
       </div>
       <style>{`@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
