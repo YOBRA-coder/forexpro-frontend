@@ -390,21 +390,21 @@ function SigCard({ s, selected, onClick }) {
   );
 }
 
-const PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","XAUUSD","BTCUSD"];
+const PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","XAUUSD","BTCUSD","EURAUD];
 // Real currency pairs only — used anywhere the user is picking pairs to trade/copy
 // ("my pairs fix to allow only for forex"). XAUUSD/BTCUSD stay visible as market
 // info on the Prices ticker but are excluded from signal generation & copy filters.
-const FOREX_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY"];
+const FOREX_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","EURAUD"];
 const TFS   = ["M1","M5","M15","M30","H1","H4","D1","W1"];
 
 // Broker-style quote precision — JPY crosses & metals trade in fewer decimals,
 // everything else uses the standard 4-decimal (fractional-pip) forex convention.
 function pairDecimals(pair) {
-  if (!pair) return 4;
+  if (!pair) return 5;
   if (pair.includes("JPY")) return 3;
   if (pair === "XAUUSD") return 2;
   if (pair === "BTCUSD") return 2;
-  return 4;
+  return 5;
 }
 
 export { ConfRing, CandleChart1, SigCard, PAIRS, FOREX_PAIRS, TFS, pairDecimals };
