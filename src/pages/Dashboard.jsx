@@ -15,13 +15,13 @@ export default function Dashboard({ api }) {
 
     useEffect(() => {
         api.get("/dashboard/stats").then(setStats).catch(() => { });
-        api.get("/prices/live?pairs=EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD,GBPJPY").then(d => setPrices(d.prices || [])).catch(() => { });
+        api.get("/prices/live?pairs=EURUSD,GBPUSD,USDJPY,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,EURAUD").then(d => setPrices(d.prices || [])).catch(() => { });
         api.get("/signals/latest?limit=8").then(d => setSignals(d.signals || [])).catch(() => { });
         api.get("/copy/my-trades").then(d => setCopies((d.trades || []).slice(0, 6))).catch(() => { });
         api.get("/notifications").then(d => setNotifs((d.notifications || []).slice(0, 6))).catch(() => { });
         const t = setInterval(() => {
             api.get("/dashboard/stats").then(setStats).catch(() => { });
-            api.get("/prices/live?pairs=EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD,GBPJPY").then(d => setPrices(d.prices || [])).catch(() => { });
+            api.get("/prices/live?pairs=EURUSD,GBPUSD,USDJPY,AUDUSD,USDCAD,USDCHF,NZDUSD,EURGBP,EURJPY,GBPJPY,EURAUD").then(d => setPrices(d.prices || [])).catch(() => { });
         }, 15000);
         return () => clearInterval(t);
     }, []);
