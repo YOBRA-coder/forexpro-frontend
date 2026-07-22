@@ -390,7 +390,7 @@ function SigCard({ s, selected, onClick }) {
   );
 }
 
-const PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY"];
+const PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","EURAUD"];
 // Real currency pairs only — used anywhere the user is picking pairs to trade/copy
 // ("my pairs fix to allow only for forex"). XAUUSD/BTCUSD stay visible as market
 // info on the Prices ticker but are excluded from signal generation & copy filters.
