@@ -390,11 +390,11 @@ function SigCard({ s, selected, onClick }) {
   );
 }
 
-const PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","XAUUSD","BTCUSD","EURAUD"];
+const PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","XAUUSD","BTCUSD"];
 // Real currency pairs only — used anywhere the user is picking pairs to trade/copy
 // ("my pairs fix to allow only for forex"). XAUUSD/BTCUSD stay visible as market
 // info on the Prices ticker but are excluded from signal generation & copy filters.
-const FOREX_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","EURAUD"];
+const FOREX_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY"];
 const TFS   = ["M1","M5","M15","M30","H1","H4","D1","W1"];
 
 // Broker-style quote precision — JPY crosses & metals trade in fewer decimals,

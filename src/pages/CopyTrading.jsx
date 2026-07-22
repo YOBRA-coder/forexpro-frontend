@@ -137,7 +137,11 @@ export default function CopyTrading({ api }) {
         <Card>
           <SectionTitle>Active Subscriptions</SectionTitle>
           {subs.map(sub => (
-            <Row key={sub.provider_id} style={{ flexWrap: "wrap", gap: 10 }}>
+            <Row key={sub.provider_id} style={{ flexDirection: "row", // Guarantees row alignment on mobile
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    borderBottom: `1px solid ${C.border}20`,
+                                    padding: "8px 0" }}>
               <strong style={{ flex: 1, fontSize: 13 }}>{sub.display_name}</strong>
               <span style={{ fontSize: 11, color: C.muted }}>WR {sub.win_rate}%</span>
               <span style={{ fontSize: 11, color: C.muted }}>Risk {sub.risk_pct}%</span>

@@ -25,7 +25,8 @@ import { CandleChart1, PAIRS, FOREX_PAIRS, TFS, pairDecimals } from "../componen
 import { WS_BASE } from "../api/Api.jsx";
 import { useLiveSocket } from "../hooks/useLiveSocket.js";
 
-const MARKET_LIST_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","XAUUSD","BTCUSD","GBPJPY"];
+const MARKET_LIST_PAIRS = ["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","EURGBP","EURJPY","GBPJPY","EURAUD","AUDJPY","AUDNZD","CADJPY","CHFJPY","EURAUD","EURCAD","EURNZD","GBPAUD","GBPCAD","GBPNZD","NZDJPY"];
+
 const PRICES_WS_URL = `${WS_BASE}/ws/prices?pairs=${MARKET_LIST_PAIRS.join(",")}`;
 
 export default function PricesPage({ api }) {

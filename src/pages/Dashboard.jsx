@@ -103,7 +103,12 @@ export default function Dashboard({ api }) {
                                 <Row
                                     key={s.id}
                                     onClick={() => navigate(`/signals?id=${s.id}`)}
-                                    style={{ cursor: "pointer" }}
+                                    style={{  display: "flex",
+                                         flexDirection: "row", // Guarantees row alignment on mobile
+                                         justifyContent: "space-between",
+                                         alignItems: "center",
+                                         cursor: "pointer" 
+                                    }}
                                 >
                                     <strong
                                         style={{
@@ -218,8 +223,10 @@ export default function Dashboard({ api }) {
                                 key={p.pair}
                                 onClick={() => navigate(`/prices?pair=${p.pair}`)}
                                 style={{
+                                    flexDirection: "row", // Guarantees row alignment on mobile
                                     justifyContent: "space-between",
-                                    cursor: "pointer",
+                                    alignItems: "center",
+                                    cursor: "pointer" 
                                 }}
                             >
                                 <strong style={{ fontSize: 12 }}>
@@ -276,7 +283,10 @@ export default function Dashboard({ api }) {
                                 <Row
                                     key={t.id}
                                     onClick={() => navigate(`/prices?pair=${t.pair}&copyTradeId=${t.id}`)}
-                                    style={{ cursor: "pointer" }}
+                                    style={{ flexDirection: "row", // Guarantees row alignment on mobile
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    cursor: "pointer"  }}
                                 >
                                     <strong
                                         style={{

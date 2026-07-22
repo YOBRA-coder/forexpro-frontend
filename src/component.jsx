@@ -233,7 +233,7 @@ body{
 
             .mobile-link.active{
               color:${C.gold};
-              background:${C.gold}16;
+              background:${C.gold}2;
             }
 
             .content{
@@ -371,6 +371,16 @@ body{
                 }}
               >
                 ForexPro
+                <div
+                style={{
+                  fontSize: 9,
+                  color: C.muted,
+                  letterSpacing: 2,
+                  marginTop: 2,
+                }}
+              >
+                {window.location.pathname === "/" ? "DASHBOARD" : window.location.pathname.replace("/", "").toUpperCase()}
+              </div>
               </div>
              
 
@@ -404,13 +414,22 @@ body{
                   ghost
                   onClick={logout}
                   style={{
-                    fontSize: 11,
-                    padding: "5px 12px",
+                    fontSize: 12, padding: "6px 10px", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                    width: 32, height: 32, borderRadius: 8,color: C.text, background: C.surf2, border: `1px solid ${C.border}` ,hover: { background: C.gold, color: C.surf2 }, transition: "0.15s",
                   }}
                 >
-                  Sign Out
+                   📤
                 </Btn>
                  <NavLink to="/profile" style={{cursor: "pointer", display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "inherit"}}>
+                   <div
+                    style={{
+                      fontSize: 10,
+                      color: C.muted,
+                    }}
+                  >
+                    {user?.plan?.toUpperCase()} · $
+                    {Number(user?.balance || 0).toLocaleString()}
+                  </div>
                   <div
                   style={{
                     width: 30,
@@ -428,15 +447,7 @@ body{
                   {user?.username?.[0]?.toUpperCase()}
                 </div>
                  
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: C.muted,
-                    }}
-                  >
-                    {user?.plan?.toUpperCase()} · $
-                    {Number(user?.balance || 0).toLocaleString()}
-                  </div>
+                 
                 </NavLink>
                 
               </div>

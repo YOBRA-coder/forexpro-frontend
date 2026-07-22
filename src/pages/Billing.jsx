@@ -94,6 +94,7 @@ function MpesaModal({ api, kind, plan, amount, amountUsd, onClose, onSuccess }) 
 }
 
 export default function Billing({ api, user, setUser }) {
+  if(!user) return <div style={{ padding: 20, maxWidth: 980, margin: "0 auto" }}>Loading…</div>;
   const [plans, setPlans]     = useState(null);
   const [ccy, setCcy]         = useState("KES"); // KES (M-Pesa) | USD (card)
   const [modal, setModal]     = useState(null);  // { kind, plan, amount }
